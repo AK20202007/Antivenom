@@ -116,6 +116,12 @@ class LocalStore:
     async def beliefs_as_of(self, t: float) -> list[Belief]:
         return [b for b in self.beliefs.values() if b.was_live_at(t)]
 
+    async def all_beliefs(self) -> list[Belief]:
+        return list(self.beliefs.values())
+
+    async def all_sources(self) -> list[Source]:
+        return list(self.sources.values())
+
     # ─── traversal ───────────────────────────────────────────────────────────
 
     async def blast_radius(self, culprit_id: str, max_depth: int) -> list[BlastNode]:

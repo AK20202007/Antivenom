@@ -66,6 +66,17 @@ class Store(Protocol):
         """What the agent believed at time ``t``. The before/after proof."""
         ...
 
+    async def all_beliefs(self) -> list[Belief]:
+        """Every belief, invalidated ones included.
+
+        Scoring needs the excised rows: collateral damage is counted over
+        beliefs that were wrongly cut, so a live-only query is by definition
+        the wrong denominator.
+        """
+        ...
+
+    async def all_sources(self) -> list[Source]: ...
+
     # ─── traversal ───────────────────────────────────────────────────────────
     async def blast_radius(self, culprit_id: str, max_depth: int) -> list[BlastNode]:
         """Every descendant of the culprit, ordered by depth ascending.

@@ -14,6 +14,8 @@ index finishes building, which reads exactly like "retrieval is broken".
 
 from __future__ import annotations
 
+import contextlib
+import inspect
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 
@@ -129,6 +131,14 @@ class MongoStore:
         cursor = self.db[P.BELIEFS].find(P.as_of_filter(t))
         return [Belief.from_mongo(d) async for d in cursor]
 
+    async def all_beliefs(self) -> list[Belief]:
+        cursor = self.db[P.BELIEFS].find({})
+        return [Belief.from_mongo(d) async for d in cursor]
+
+    async def all_sources(self) -> list[Source]:
+        cursor = self.db[P.SOURCES].find({})
+        return [Source.from_mongo(d) async for d in cursor]
+
     # ─── traversal ───────────────────────────────────────────────────────────
 
     async def blast_radius(self, culprit_id: str, max_depth: int) -> list[BlastNode]:
@@ -209,23 +219,66 @@ class MongoStore:
     # ─── bootstrap ───────────────────────────────────────────────────────────
 
     async def create_vector_index(self) -> str:
-        """Create the Atlas vector index if the cluster tier allows it.
+        """Create the Atlas vector index. Idempotent.
 
-        Returns the index name. Atlas builds it asynchronously — poll
+        Returns the index name. Atlas builds it asynchronously, so poll
         ``$listSearchIndexes`` until ``queryable`` is true before relying on
-        retrieval, or the first demo query comes back empty.
+        retrieval, or the first demo query comes back empty with no error.
+
+        Re-running is a no-op rather than an error. This is the command the
+        setup docs tell people to run, and a setup command that fails the
+        second time is a setup command that gets run once and then feared.
         """
         definition = P.vector_index_definition(settings().embedding_dims)
-        await self.db[P.BELIEFS].create_search_index(
-            {"name": P.VECTOR_INDEX_NAME, "type": "vectorSearch", "definition": definition}
-        )
+        try:
+            await self.db[P.BELIEFS].create_search_index(
+                {"name": P.VECTOR_INDEX_NAME, "type": "vectorSearch", "definition": definition}
+            )
+        except Exception as exc:
+            # Atlas says "is already defined", not "already exists", and the
+            # error code is the reliable signal. Matching on prose alone is how
+            # this silently stops being idempotent after a wording change.
+            already = getattr(exc, "code", None) == 68 or "already defined" in str(exc).lower()
+            if not already:
+                raise
         return P.VECTOR_INDEX_NAME
 
-    async def vector_index_ready(self) -> bool:
+    async def drop_vector_index(self) -> None:
+        """Remove the vector index so it can be rebuilt at a new dimension."""
+        with contextlib.suppress(Exception):
+            await self.db[P.BELIEFS].drop_search_index(P.VECTOR_INDEX_NAME)
+
+    async def vector_index_dims(self) -> int | None:
+        """The dimension the existing vector index was built with.
+
+        Worth checking explicitly: if it disagrees with ``embedding_dims`` every
+        search returns nothing at all, with no error anywhere, which reads
+        exactly like broken retrieval rather than a config mismatch.
+        """
+        for idx in await self._search_indexes(P.VECTOR_INDEX_NAME):
+            fields = (idx.get("latestDefinition") or {}).get("fields") or []
+            for field in fields:
+                if field.get("type") == "vector":
+                    return int(field.get("numDimensions", 0)) or None
+        return None
+
+    async def _search_indexes(self, name: str) -> list[dict[str, Any]]:
+        """List search indexes, tolerating both driver shapes.
+
+        Some driver versions hand back the cursor directly and some return an
+        awaitable that resolves to one. Awaiting unconditionally raises a
+        TypeError on the former, which is a baffling failure for something this
+        peripheral to trip on.
+        """
         try:
-            cursor = self.db[P.BELIEFS].list_search_indexes(P.VECTOR_INDEX_NAME)
-            async for idx in cursor:
-                return bool(idx.get("queryable"))
+            result = self.db[P.BELIEFS].list_search_indexes(name)
+            if inspect.isawaitable(result):
+                result = await result
+            return [idx async for idx in result]
         except Exception:
-            return False
+            return []
+
+    async def vector_index_ready(self) -> bool:
+        for idx in await self._search_indexes(P.VECTOR_INDEX_NAME):
+            return bool(idx.get("queryable"))
         return False

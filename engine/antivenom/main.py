@@ -103,9 +103,25 @@ def doctor() -> None:
                     table.add_row(
                         "vector index",
                         "[green]ok[/]" if is_ready else "[red]FAIL[/]",
-                        "queryable" if is_ready else "not built — run: antivenom db init",
+                        "queryable" if is_ready else "not built. run: antivenom db init",
                     )
                     failures += 0 if is_ready else 1
+
+                    # An index built at the wrong dimension does not error on
+                    # query, it returns nothing. That reads as broken retrieval
+                    # and costs an hour to find, so check it explicitly.
+                    dims = await store.vector_index_dims()  # type: ignore[attr-defined]
+                    want = cfg.embedding_dims
+                    if dims is not None and dims != want:
+                        table.add_row(
+                            "vector dimensions",
+                            "[red]FAIL[/]",
+                            f"index={dims} config={want}. every search returns "
+                            "nothing. run: antivenom db reindex",
+                        )
+                        failures += 1
+                    elif dims is not None:
+                        table.add_row("vector dimensions", "[green]ok[/]", f"{dims}")
                 await store.close()
             except Exception as exc:
                 table.add_row("atlas sandbox", "[red]FAIL[/]", str(exc)[:90])
@@ -473,6 +489,39 @@ def serve(run_path: Path | None = typer.Option(None, "--run")) -> None:
     cfg = settings()
     console.print(f"[green]event channel[/] ws://{cfg.host}:{cfg.port}/ws   [{_flag_line()}]")
     _serve(run_path)
+
+
+@db_app.command("reindex")
+def db_reindex(
+    yes: bool = typer.Option(False, "--yes", help="Skip the confirmation."),
+) -> None:
+    """Drop and rebuild the Atlas vector index.
+
+    Needed when the embedding dimension changes. An index built for a different
+    dimension does not error on query, it returns nothing, so this is the fix
+    for the most confusing failure in the whole system.
+    """
+    _require_services()
+
+    async def _go() -> None:
+        store = get_store()
+        await store.connect()
+        try:
+            current = await store.vector_index_dims()  # type: ignore[attr-defined]
+            target = settings().embedding_dims
+            console.print(f"existing index: {current} dims -> rebuilding at {target}")
+            if not yes and not typer.confirm("Drop and rebuild the vector index?"):
+                raise typer.Abort
+            await store.drop_vector_index()  # type: ignore[attr-defined]
+            await store.create_vector_index()  # type: ignore[attr-defined]
+            console.print(
+                "[green]rebuild requested[/] Atlas builds asynchronously; "
+                "run `antivenom doctor` until it reports queryable."
+            )
+        finally:
+            await store.close()
+
+    asyncio.run(_go())
 
 
 @db_app.command("init")

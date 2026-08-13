@@ -80,9 +80,28 @@ def test_vector_search_prefilters_to_live_beliefs():
     assert stage["filter"] == P.live_filter()
 
 
-def test_vector_search_num_candidates_defaults_to_twenty_times_limit():
+def test_vector_search_over_fetches_when_filtering_to_live():
+    """The definitive live check happens after the stage, so the stage has to
+    return more than the caller asked for or the post-filter starves it."""
     stage = _stage(P.vector_search_pipeline([0.1] * 8, limit=5), "$vectorSearch")
+    assert stage["limit"] > 5
+    assert stage["numCandidates"] == stage["limit"] * 20
+
+
+def test_vector_search_num_candidates_is_twenty_times_the_stage_limit():
+    stage = _stage(P.vector_search_pipeline([0.1] * 8, limit=5, live_only=False), "$vectorSearch")
+    assert stage["limit"] == 5
     assert stage["numCandidates"] == 100
+
+
+def test_live_filtering_is_enforced_after_the_stage_not_trusted_to_the_index():
+    """Atlas vector-search filters are unreliable on null equality. Serving an
+    excised belief means the post-surgery answer never changes, so the guarantee
+    is a $match in the pipeline rather than the index filter."""
+    pipeline = P.vector_search_pipeline([0.1] * 8, limit=5)
+    assert {"$match": P.live_filter()} in pipeline
+    # And the caller still gets exactly what it asked for.
+    assert {"$limit": 5} in pipeline
 
 
 def test_vector_search_projects_the_score():

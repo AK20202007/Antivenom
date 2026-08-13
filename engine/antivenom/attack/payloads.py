@@ -21,6 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from ..eval.mpbench import AttackClass
 from ..schemas import Channel
@@ -270,7 +271,7 @@ def build_image_payload(
     draw = ImageDraw.Draw(overlay)
 
     try:
-        font = ImageFont.truetype("DejaVuSans.ttf", spec.font_size)
+        font: Any = ImageFont.truetype("DejaVuSans.ttf", spec.font_size)
     except OSError:  # pragma: no cover - font availability varies by machine
         font = ImageFont.load_default()
 

@@ -207,29 +207,27 @@ async def _ground_truth(store: object) -> tuple[list[str], list[str]]:
     """Labelled lineage and clean sets, read from adversarial source flags.
 
     ``is_adversarial`` is eval-only ground truth. It is read **here**, after the
-    surgery has already decided, and never by the engine while deciding —
-    otherwise the metrics would be scoring the labels rather than the method.
-    """
-    lineage: list[str] = []
-    clean: list[str] = []
+    surgery has already decided, and never by the engine while deciding, or the
+    metrics would be scoring the labels rather than the method.
 
-    beliefs = list(getattr(store, "beliefs", {}).values()) or []
+    Queries the store through its interface. An earlier version reached into a
+    ``.beliefs`` dict, which exists only on the in-memory backend, so every
+    Atlas run silently reported RR 0% with no error anywhere.
+    """
+    beliefs = await store.all_beliefs()  # type: ignore[attr-defined]
+    sources = await store.all_sources()  # type: ignore[attr-defined]
     if not beliefs:
         return [], []
 
-    adversarial = {
-        source.id
-        for source in getattr(store, "sources", {}).values()
-        if getattr(source, "is_adversarial", False)
-    }
+    adversarial = {s.id for s in sources if getattr(s, "is_adversarial", False)}
     if not adversarial:
         return [], []
 
+    lineage: list[str] = []
+    clean: list[str] = []
     for belief in beliefs:
-        sources = set(belief.source_ids)
-        tainted = bool(sources & adversarial)
-        has_clean = bool(sources - adversarial)
-        if tainted and not has_clean:
+        ids = set(belief.source_ids)
+        if (ids & adversarial) and not (ids - adversarial):
             lineage.append(belief.id)
         else:
             clean.append(belief.id)

@@ -234,19 +234,31 @@ def vector_search_pipeline(
     the retrieved context and re-decide. ``num_candidates`` defaults to 20x the
     limit, the ratio Atlas recommends for ~90-95% recall against exact search.
     """
+    # Over-fetch when filtering, because the definitive live check happens after
+    # the stage and will discard some of what comes back.
+    effective_limit = limit * 4 if live_only else limit
     stage: dict[str, Any] = {
         "index": VECTOR_INDEX_NAME,
         "path": "embedding",
         "queryVector": query_vector,
-        "numCandidates": num_candidates if num_candidates is not None else limit * 20,
-        "limit": limit,
+        "numCandidates": num_candidates if num_candidates is not None else effective_limit * 20,
+        "limit": effective_limit,
     }
     if live_only:
+        # Best-effort pre-filter. Atlas Vector Search filters are unreliable on
+        # null equality, so this narrows the candidate set but is NOT the
+        # guarantee. The $match below is.
         stage["filter"] = live_filter()
 
     pipeline: list[dict[str, Any]] = [{"$vectorSearch": stage}]
+    if live_only:
+        # The guarantee. Retrieval that serves an excised belief means the
+        # post-surgery answer never changes and the whole payoff evaporates,
+        # so this is enforced in the pipeline rather than trusted to the index.
+        pipeline.append({"$match": live_filter()})
     if exclude_ids:
         pipeline.append({"$match": {"_id": {"$nin": exclude_ids}}})
+    pipeline.append({"$limit": limit})
     pipeline.append(
         {
             "$project": {
