@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: 'es2022',
+    // Marketing build ships to a public Pages host; source maps would expose
+    // the full TypeScript surface for no operational gain.
+    sourcemap: false,
     // The force-graph bundle is large and only the cascade needs it.
     rollupOptions: {
       output: {
