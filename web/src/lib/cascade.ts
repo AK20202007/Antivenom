@@ -323,46 +323,81 @@ export function reduceAll(events: AnyEvent[]): CascadeState {
 export function dwellFor(event: AnyEvent): number {
   switch (event.type) {
     case 'run.started':
-      return 400;
+      return 300;
+    // Setup is texture. It needs to be seen accumulating, not read.
     case 'source.ingested':
-      return 90;
+      return 110;
     case 'write.risk_scored':
-      return 140;
+      return 220;
     case 'belief.written':
-      return 45;
+      return 26;
     case 'provenance.edge':
-      return 12;
+      return 6;
     case 'session.advanced':
-      return 55;
+      return 24;
+
+    // ── the four beats the room is meant to actually watch ──
     case 'agent.retrieved':
-      return 420;
+      return 500;
     case 'agent.acted':
-      // Let the attacker URL sit on screen. Say nothing over this.
-      return 2200;
+      // The attacker URL. Say nothing over this.
+      return 3200;
     case 'interrogation.turn':
-      return 2600;
+      return 4200;
+
     case 'ablation.pass':
-      return 70;
+      return 34;
     case 'ablation.culprit':
-      return 1100;
-    case 'blast.node':
-      return 130;
-    case 'blast.summary':
       return 1600;
+    case 'blast.node':
+      return 105;
+    case 'blast.summary':
+      return 2000;
     case 'surgery.started':
-      return 700;
+      return 800;
     case 'belief.excised':
-      return 320;
+      return 300;
     case 'belief.survived':
-      return 620;
-    case 'trust.updated':
+      // The proof of precision. Longer than an excision on purpose.
       return 700;
-    case 'surgery.completed':
+    case 'trust.updated':
       return 900;
+    case 'surgery.completed':
+      return 1400;
     case 'run.completed':
-      return 600;
+      return 1200;
     default:
-      return 120;
+      return 90;
+  }
+}
+
+/** The five acts, for the stage tracker. */
+export const STAGES = [
+  { key: 'plant', label: 'Plant', hint: 'filter says clean' },
+  { key: 'dormant', label: 'Wait', hint: '20 sessions, nothing anomalous' },
+  { key: 'fire', label: 'Fire', hint: 'credentials leave' },
+  { key: 'diagnose', label: 'Diagnose', hint: 'ablation finds the culprit' },
+  { key: 'operate', label: 'Operate', hint: 'cut the lineage, keep the rest' },
+] as const;
+
+export type StageKey = (typeof STAGES)[number]['key'];
+
+export function stageFor(phase: Phase): StageKey {
+  switch (phase) {
+    case 'idle':
+    case 'ingest':
+      return 'plant';
+    case 'dormant':
+      return 'dormant';
+    case 'fired':
+    case 'interrogating':
+      return 'fire';
+    case 'diagnosing':
+      return 'diagnose';
+    case 'radius':
+    case 'operating':
+    case 'resolved':
+      return 'operate';
   }
 }
 

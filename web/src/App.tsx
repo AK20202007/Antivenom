@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoisonedArtifact } from './components/PoisonedArtifact';
 import { CascadeGraph } from './components/CascadeGraph';
-import { EventFeed, InfluencePanel, Interrogation, MetricStrip, PhaseBar } from './components/Console';
+import {
+  EventFeed,
+  Headline,
+  InfluencePanel,
+  Interrogation,
+  PhaseBar,
+  StageTracker,
+  Tally,
+} from './components/Console';
 import { Wordmark } from './components/Logo';
 import { useReplay } from './lib/useReplay';
 
@@ -387,41 +395,19 @@ function Cascade() {
           </p>
         )}
 
+        <StageTracker state={replay.state} />
+
         <div className="cascade-grid">
-          <div className="panel" style={{ padding: '0.9rem', minWidth: 0 }}>
-            <CascadeGraph state={replay.state} />
-            <div
-              style={{
-                height: 2,
-                background: 'var(--line)',
-                borderRadius: 2,
-                marginTop: '0.6rem',
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  width: `${progress}%`,
-                  background: 'var(--serum)',
-                  transition: 'width 160ms linear',
-                }}
-              />
+          <div className="panel cascade-stage" style={{ padding: '0.9rem', minWidth: 0 }}>
+            <CascadeGraph state={replay.state} height={520} />
+            <div className="cascade-progress">
+              <div style={{ width: `${progress}%` }} />
             </div>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginTop: '0.6rem',
-                gap: '1rem',
-              }}
-            >
+            <div className="cascade-foot">
               <span className="label">
                 {replay.source === 'live'
                   ? 'live engine'
-                  : 'recorded run · real engine output, all flags off'}
+                  : 'recorded run · real engine output'}
               </span>
               <span className="mono dim" style={{ fontSize: '0.6875rem' }}>
                 {replay.cursor}/{replay.total}
@@ -429,15 +415,16 @@ function Cascade() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gap: '1.1rem', minWidth: 0, alignContent: 'start' }}>
+          <div className="cascade-rail">
             <PhaseBar state={replay.state} />
-            <MetricStrip state={replay.state} />
+            <Headline state={replay.state} />
+            <Tally state={replay.state} />
             <InfluencePanel state={replay.state} />
-            <div className="panel" style={{ padding: '0.9rem', minWidth: 0 }}>
-              <p className="label" style={{ marginBottom: '0.6rem' }}>
+            <div className="panel" style={{ padding: '0.85rem', minWidth: 0 }}>
+              <p className="label" style={{ marginBottom: '0.5rem' }}>
                 telemetry
               </p>
-              <EventFeed events={replay.events.slice(0, replay.cursor)} />
+              <EventFeed events={replay.events.slice(0, replay.cursor)} height={150} />
             </div>
           </div>
         </div>

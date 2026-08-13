@@ -438,3 +438,156 @@ a:hover .av-half--down {
     transform: translateY(1.1px);
   }
 }
+
+/* ── stage tracker ──────────────────────────────────────────────────────────
+   Five acts, always on screen. Without it the cascade is a lot of motion with
+   no sense of where you are, which is the difference between watching a system
+   work and watching dots move. */
+
+.stages {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  list-style: none;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 1.1rem;
+}
+
+.stage {
+  background: var(--panel);
+  padding: 0.7rem 0.85rem;
+  display: grid;
+  gap: 0.12rem;
+  transition:
+    background var(--mid) var(--ease),
+    color var(--mid) var(--ease);
+}
+
+.stage__n {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-4);
+}
+
+.stage__label {
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: var(--ink-3);
+}
+
+.stage__hint {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  color: var(--ink-4);
+  line-height: 1.4;
+}
+
+.stage--done .stage__label {
+  color: var(--ink-2);
+}
+.stage--done .stage__n {
+  color: var(--serum-2);
+}
+
+.stage--now {
+  background: var(--panel-2);
+}
+.stage--now .stage__label {
+  color: var(--ink);
+}
+.stage--now .stage__n,
+.stage--now .stage__hint {
+  color: var(--serum);
+}
+
+/* ── one headline number, the one this act is about ─────────────────────── */
+
+.headline {
+  border-left: 2px solid var(--line-hi);
+  padding-left: 0.9rem;
+}
+
+.headline--serum {
+  border-left-color: var(--serum);
+}
+.headline--venom {
+  border-left-color: var(--venom);
+}
+
+.headline__value {
+  font-weight: 500;
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.headline--serum .headline__value {
+  color: var(--serum);
+}
+.headline--venom .headline__value {
+  color: var(--venom);
+}
+
+.headline__label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--ink-3);
+  margin-top: 0.3rem;
+}
+
+.tally {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.tally__n {
+  font-size: 1.5rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  display: block;
+  line-height: 1.1;
+}
+
+.tally__l {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--ink-3);
+}
+
+.cascade-progress {
+  height: 2px;
+  background: var(--line);
+  border-radius: 2px;
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.cascade-progress > div {
+  height: 100%;
+  background: var(--serum);
+  transition: width 160ms linear;
+}
+
+.cascade-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.55rem;
+}
+
+.cascade-rail {
+  display: grid;
+  gap: 0.9rem;
+  min-width: 0;
+  align-content: start;
+}

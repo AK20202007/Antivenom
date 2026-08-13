@@ -38,7 +38,7 @@ const FILL: Record<NodeState, string> = {
   clean: '#3a3a42',
   poison: '#fb7185',
   inRadius: '#7f2a3c',
-  excised: '#141418',
+  excised: '#1c1114',
   survived: '#5eead4',
 };
 
@@ -48,15 +48,19 @@ const STROKE: Record<NodeState, string> = {
   inRadius: '#fb7185',
   // Extinguished, not absent. A near-black ring on a near-black canvas made
   // excised beliefs vanish, and the room needs to be able to count them.
-  excised: '#52525b',
+  excised: '#6b3a44',
   survived: '#ccfbf1',
 };
 
 function radiusFor(node: CascadeNode): number {
-  if (node.state === 'poison') return 11;
-  if (node.kind === 'source') return 7;
-  if (node.state === 'survived') return 8;
-  return 5.5;
+  // Sized by narrative weight, not by degree. Patient zero and the survivors
+  // are what the room is asked to look at, so they are the biggest things on
+  // the canvas even though the graph does not care.
+  if (node.state === 'poison') return 14;
+  if (node.state === 'survived') return 11;
+  if (node.kind === 'source') return 8;
+  if (node.state === 'inRadius') return 8;
+  return 6.5;
 }
 
 export function CascadeGraph({ state, height = 460 }: { state: CascadeState; height?: number }) {
@@ -89,7 +93,7 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
   // Loosen the charge so a 27-node graph fills the frame instead of clumping.
   useEffect(() => {
     const charge = graphRef.current?.d3Force('charge');
-    charge?.strength?.(-190);
+    charge?.strength?.(-320);
   }, []);
 
   const paintNode = useCallback(
@@ -120,15 +124,18 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
       }
       ctx.fillStyle = FILL[node.state];
       ctx.fill();
-      ctx.lineWidth = node.state === 'excised' ? 1.1 : 1.4;
+      ctx.lineWidth = node.state === 'excised' ? 1.6 : 1.4;
       ctx.strokeStyle = STROKE[node.state];
       ctx.stroke();
 
-      if (scale > 1.7 || node.state === 'poison') {
-        ctx.font = `500 ${Math.max(3.2, 9 / scale) * 1.2}px ui-monospace, monospace`;
+      // Label the things that carry meaning. Labelling everything turns the
+      // canvas into noise; labelling nothing makes it abstract.
+      const worthLabelling = node.state === 'poison' || node.state === 'survived';
+      if (scale > 1.9 || worthLabelling) {
+        ctx.font = `500 ${Math.max(4.2, 10 / scale) * 1.15}px ui-monospace, monospace`;
         ctx.fillStyle = node.state === 'excised' ? '#52525b' : '#a1a1aa';
         ctx.textAlign = 'center';
-        ctx.fillText(node.label.slice(0, 34), x, y + r + 9 / scale + 3);
+        ctx.fillText(node.label.slice(0, 22), x, y + r + 10 / scale + 4);
       }
     },
     [],

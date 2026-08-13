@@ -75,6 +75,10 @@
 }
 
 @media (max-width: 1040px) {
+  .stages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .hero-grid,
   .reveal-grid,
   .cascade-grid {
@@ -106,6 +110,14 @@
 }
 
 @media (max-width: 620px) {
+  .stages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stage__hint {
+    display: none;
+  }
+
   .hero-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.25rem;

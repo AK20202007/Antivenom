@@ -9,7 +9,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { AnyEvent } from '../lib/events';
-import { PHASE_COPY, type CascadeState } from '../lib/cascade';
+import { PHASE_COPY, STAGES, stageFor, type CascadeState } from '../lib/cascade';
 
 /* ── telemetry ──────────────────────────────────────────────────────────── */
 
@@ -180,7 +180,7 @@ export function PhaseBar({ state }: { state: CascadeState }) {
           <div
             className="mono venom"
             style={{
-              fontSize: 'clamp(0.95rem, 2.6vw, 1.6rem)',
+              fontSize: 'clamp(0.8rem, 1.55vw, 1.15rem)',
               fontWeight: 500,
               marginTop: '0.4rem',
               overflowWrap: 'anywhere',
@@ -329,6 +329,94 @@ export function Interrogation({ state }: { state: CascadeState }) {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── stage tracker ───────────────────────────────────────────────────────────
+   Five acts, always visible. Without it the cascade is a lot of motion with no
+   sense of where you are in the story, which is the difference between watching
+   a system work and watching dots move. */
+
+export function StageTracker({ state }: { state: CascadeState }) {
+  const current = stageFor(state.phase);
+  const index = STAGES.findIndex((s) => s.key === current);
+
+  return (
+    <ol className="stages">
+      {STAGES.map((stage, i) => {
+        const status = i < index ? 'done' : i === index ? 'now' : 'todo';
+        return (
+          <li key={stage.key} className={`stage stage--${status}`}>
+            <span className="stage__n">{String(i + 1).padStart(2, '0')}</span>
+            <span className="stage__label">{stage.label}</span>
+            <span className="stage__hint">{stage.hint}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/* ── headline number ─────────────────────────────────────────────────────────
+   One figure at a time, the one this act is about. Five tiles of placeholder
+   dots reads as a dashboard waiting for data; a single number that changes
+   reads as a system doing something. */
+
+export function Headline({ state }: { state: CascadeState }) {
+  const m = state.metrics;
+  let value = '—';
+  let label = 'standing by';
+  let tone: 'serum' | 'venom' | 'neutral' = 'neutral';
+
+  if (m.riskVerdict && state.phase === 'ingest') {
+    value = m.riskVerdict.toUpperCase();
+    label = `write-time filter · score ${m.riskScore?.toFixed(2) ?? '0.00'}`;
+    tone = 'serum';
+  } else if (state.phase === 'dormant') {
+    value = `${state.sessionsRun}`;
+    label = 'sessions · nothing anomalous';
+    tone = 'neutral';
+  } else if (state.phase === 'fired' || state.phase === 'interrogating') {
+    value = 'HARMFUL';
+    label = 'credentials aimed off-domain';
+    tone = 'venom';
+  } else if (state.phase === 'diagnosing') {
+    value = `${state.influence.size}`;
+    label = 'candidates under ablation';
+    tone = 'venom';
+  } else if (m.beliefsTouched && m.rr === null) {
+    value = `${m.beliefsTouched}`;
+    label = `beliefs touched · ${m.decisionsInfluenced} decisions · ${Math.round(m.spanDays)} days`;
+    tone = 'venom';
+  } else if (m.rr !== null) {
+    value = `${Math.round(m.rr * 100)}%`;
+    label = `recovery · ${Math.round((m.cd ?? 0) * 100)}% collateral damage`;
+    tone = 'serum';
+  }
+
+  return (
+    <div className={`headline headline--${tone}`}>
+      <div className="headline__value">{value}</div>
+      <div className="headline__label">{label}</div>
+    </div>
+  );
+}
+
+/** Compact excised/survived counter, only once the surgery starts. */
+export function Tally({ state }: { state: CascadeState }) {
+  const { excised, survived } = state.metrics;
+  if (!excised && !survived) return null;
+  return (
+    <div className="tally">
+      <div>
+        <span className="tally__n venom">{excised}</span>
+        <span className="tally__l">excised</span>
+      </div>
+      <div>
+        <span className="tally__n serum">{survived}</span>
+        <span className="tally__l">survived on corroboration</span>
+      </div>
     </div>
   );
 }
