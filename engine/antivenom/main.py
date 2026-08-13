@@ -457,6 +457,27 @@ def evaluate(
         console.print(f"[green]wrote[/] {json_out}")
 
 
+@app.command()
+def live(
+    image: Path = typer.Option(
+        Path("data/fixtures/q3-onboarding-deck.png"), "--image", help="The poisoned artifact."
+    ),
+    local: bool = typer.Option(False, "--local", help="In-memory store."),
+) -> None:
+    """The demo. A real image, a real vision model, a real surgery.
+
+    Reads an actual PNG with an actual VLM, so the claim extracted on screen is
+    genuinely extracted and not replayed. Everything after it is the normal
+    loop, which is the point: nothing here is demo-only.
+    """
+    from .demo_live import run_live
+
+    if not image.exists():
+        console.print(f"[red]no such image[/] {image}")
+        raise typer.Exit(1)
+    asyncio.run(run_live(image, force_local=local))
+
+
 # ─── UI support ──────────────────────────────────────────────────────────────
 
 
