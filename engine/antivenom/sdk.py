@@ -9,7 +9,6 @@ from .core.ablation import find_culprit
 from .core.beliefs import ingest
 from .core.provenance import blast_radius
 from .core.surgery import operate
-from .core.trust import propagate
 from .db.base import Store
 from .db.mongo import MongoStore
 from .llm import embed_text
@@ -126,17 +125,22 @@ class AntivenomClient:
         await self.store.put_decision(decision)
         return decision
 
-    async def repair_memory(self, decision: Decision) -> dict[str, Any]:
+    async def repair_memory(
+        self, decision: Decision, *, rerun: Any | None = None
+    ) -> dict[str, Any]:
         """Execute post-hoc surgical repair on a harmful action:
         1. Causal ablation (find culprit)
         2. Blast radius DAG traversal
         3. Selective excision & independent support re-scoring
         4. Damped trust propagation to source & channel
         """
-        culprit_id, influence_scores = await find_culprit(self.store, decision)
+        culprit_id, influence_scores = await find_culprit(self.store, decision, rerun=rerun)
         nodes = await blast_radius(self.store, culprit_id, settings().blast_max_depth)
+        # operate() propagates trust itself. Calling it again here applied the
+        # penalty twice, so one poisoned artifact cost a source double what the
+        # damping was tuned to allow.
         surgery = await operate(self.store, culprit_id, decision.id)
-        trust_updates = await propagate(self.store, surgery)
+        trust_updates = surgery.trust_updates
         return {
             "culprit_id": culprit_id,
             "influence_scores": influence_scores,

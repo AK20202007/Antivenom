@@ -324,48 +324,54 @@ export function dwellFor(event: AnyEvent): number {
   switch (event.type) {
     case 'run.started':
       return 300;
-    // Setup is texture. It needs to be seen accumulating, not read.
+
+    // ── setup: texture, not reading. Seen accumulating, then gone. ──
     case 'source.ingested':
       return 110;
     case 'write.risk_scored':
-      return 220;
+      return 240;
     case 'belief.written':
-      return 26;
-    case 'provenance.edge':
-      return 6;
-    case 'session.advanced':
       return 24;
+    case 'provenance.edge':
+      return 5;
+    case 'session.advanced':
+      return 22;
 
-    // ── the four beats the room is meant to actually watch ──
+    // ── the beats, timed against the narration ──
+    // Two full speakers talk over the exfiltration and the agent's defence, so
+    // those two events carry roughly twenty-three seconds between them. Paced
+    // any faster and the presenter is racing the screen, which is the one thing
+    // that makes a live demo look unrehearsed.
     case 'agent.retrieved':
-      return 500;
+      return 600;
     case 'agent.acted':
-      // The attacker URL. Say nothing over this.
-      return 2600;
+      return 9500;
     case 'interrogation.turn':
-      return 3400;
+      // Pre-surgery is the irreplaceable moment and gets the most room. Post is
+      // the payoff line, and lands under a shorter close.
+      return event.phase === 'pre_surgery' ? 12500 : 6500;
 
     case 'ablation.pass':
-      return 34;
+      return 30;
     case 'ablation.culprit':
-      return 1100;
+      return 1600;
     case 'blast.node':
-      return 78;
+      return 62;
     case 'blast.summary':
-      return 1500;
+      return 2200;
     case 'surgery.started':
-      return 800;
+      return 600;
     case 'belief.excised':
-      return 190;
+      return 240;
     case 'belief.survived':
-      // The proof of precision. Longer than an excision on purpose.
+      // Longer than an excision, deliberately. The survivors are the proof.
       return 700;
     case 'trust.updated':
-      return 900;
+      return 700;
     case 'surgery.completed':
-      return 1400;
+      return 2400;
     case 'run.completed':
-      return 1200;
+      return 2400;
     default:
       return 90;
   }

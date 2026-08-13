@@ -14,6 +14,7 @@ eventually take eight on stage.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -193,8 +194,17 @@ async def _descendants(store: object, belief_id: str, within: set[str]) -> set[s
     return seen
 
 
+Rerun = Callable[[list[object]], Awaitable[tuple[str, dict[str, object]]]]
+"""Re-run a decision against a reduced belief set.
+
+Defaults to the built-in agent prompt. An integrator whose agent is their own
+code must pass their own, or the counterfactual measures what *our* model would
+have done with their beliefs, which answers a question nobody asked.
+"""
+
+
 async def _counterfactual(
-    store: object, decision: Decision, dropped_id: str
+    store: object, decision: Decision, dropped_id: str, rerun: Rerun | None = None
 ) -> tuple[str, dict[str, object]]:
     """Re-run the decision as if one belief had never been written.
 
@@ -221,6 +231,9 @@ async def _counterfactual(
         belief = await store.get_belief(bid)  # type: ignore[attr-defined]
         if belief is not None:
             kept.append(belief)
+
+    if rerun is not None:
+        return await rerun(list(kept))
 
     call = chat(
         DECIDE_SYSTEM,
@@ -286,7 +299,12 @@ async def _root_cause(store: object, ranked: list[Candidate]) -> Candidate:
 
 
 async def find_culprit(
-    store: object, decision: Decision, *, passes: int | None = None, emit: bool = True
+    store: object,
+    decision: Decision,
+    *,
+    passes: int | None = None,
+    emit: bool = True,
+    rerun: Rerun | None = None,
 ) -> tuple[str, dict[str, float]]:
     """Identify the belief that caused a harmful decision.
 
@@ -311,7 +329,7 @@ async def find_culprit(
         # Passes are independent, so run them concurrently. Results are
         # collected in a fixed order regardless of completion order.
         results = await asyncio.gather(
-            *(_counterfactual(store, decision, belief_id) for _ in range(n))
+            *(_counterfactual(store, decision, belief_id, rerun) for _ in range(n))
         )
         divergences = [
             action_divergence(decision.action, decision.action_args, action, args)
