@@ -10,7 +10,11 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-5eead4.svg)](LICENSE)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11+-5eead4.svg)
 ![MongoDB Atlas](https://img.shields.io/badge/MongoDB-Atlas-5eead4.svg)
-![189 tests](https://img.shields.io/badge/tests-189%20passing-5eead4.svg)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-live-5eead4.svg)
+![Fireworks AI](https://img.shields.io/badge/Fireworks_AI-verified-5eead4.svg)
+![LangChain](https://img.shields.io/badge/LangChain-core-5eead4.svg)
+![ElevenLabs](https://img.shields.io/badge/ElevenLabs-defense_only-5eead4.svg)
+![tests](https://img.shields.io/badge/tests-325%20passing-5eead4.svg)
 
 </div>
 
@@ -18,6 +22,19 @@ Somebody lied to your agent three weeks ago. It still believes them. Today it ac
 challenge it, it defends the lie to your face and cites the source and the date.
 
 Antivenom is what you run next.
+
+```bash
+./demo    # a real image, a real vision model, a real surgery. 35 seconds.
+```
+
+## We came at this from the other side
+
+Our team hides invisible prompt injections inside assignment PDFs, so a chatbot handed a student's
+homework refuses to do it. Building those teaches you something alarming very quickly: it is trivial
+to conceal text a model reads and a human misses. And then you realise you do not need to hide an
+instruction at all. You can just hide a **fake fact**.
+
+So we hid one, and went looking for who cleans it up afterwards. Nobody does.
 
 ---
 
@@ -214,7 +231,7 @@ rather than claim the territory was empty, so that is what it is.
   of collateral damage.
 - **Five corroborated beliefs surviving** a cascade, each one able to name the clean source that saved it.
 - Channel-level trust that is **measurably transferring** to attack classes the system has never seen.
-- **189 tests, all offline**, no credentials, no network. The demo floor is the tested path.
+- **325 tests, all offline**, no credentials, no network. The demo floor is the tested path.
 - An agent that **defends a lie and then recants**, where neither answer is scripted. Both come from
   whatever survived retrieval.
 
@@ -272,7 +289,7 @@ uv venv --python 3.11 && uv pip install -e ".[dev]"
 antivenom doctor            # preflight: sandbox, keys, indexes, fixture integrity
 antivenom full --local      # plant → fire → interrogate → diagnose → operate → verify
 antivenom eval              # MPBench suite + the naive-delete ablation study
-pytest                      # 189 tests, fully offline
+pytest                      # 304 engine tests, fully offline
 
 cd ../web && npm install && npm run dev
 ```
@@ -309,9 +326,21 @@ is a stronger position than the overclaim, so we say both before anyone has to a
 
 ## 🛠️ Built with
 
-`python` · `mongodb-atlas` · `$graphLookup` · `$vectorSearch` · `change-streams` · `fastapi` · `pydantic` ·
-`networkx` · `openrouter` · `fireworks-ai` · `langchain` · `elevenlabs` · `react` · `typescript` · `vite` ·
-`websockets` · `cloudflare-pages` · `github-actions`
+Every one of these is load-bearing. Pull any row and something stops working.
+
+| | what it does here |
+|---|---|
+| **MongoDB Atlas** | The whole spine. `$graphLookup` **is** the surgery, the forward walk from patient zero that produces the blast radius. `$vectorSearch` is retrieval, the contradiction detector, and the structural-anomaly term in ablation. Bitemporal documents are the audit trail, which is why nothing is ever deleted and the same query answers "what did it believe on day N" before and after. Change streams re-evaluate children when a parent is invalidated. |
+| **MongoDB Embedding and Reranking API** | Every vector in the system. OpenRouter serves no embeddings endpoint, so this is not a preference: it is what makes an OpenRouter-only deployment possible, and it keeps embeddings, the index and the traversal on one platform. Voyage `voyage-3.5`, 1024 dimensions. |
+| **OpenRouter** | The vision model that reads the poisoned slide live, the agent that gets fooled, and the cheap fast model that runs 24 counterfactual ablation passes per diagnosis. |
+| **Fireworks AI** | The same three roles, interchangeably. Verified end to end on kimi-k2p6, glm-5p2, deepseek-v4-flash and qwen3p7-plus, plus embeddings at 4096 dimensions. Switching is one environment variable. |
+| **LangChain** | Provider-agnostic model handles, so the call sites do not care which of the two is behind them, and somewhere to hang tracing. |
+| **ElevenLabs** | The cross-examination. The agent defends the lie out loud, then recants out loud. **Defense side only, never used to construct a payload.** |
+| **Cursor** | Where four lanes were built in parallel against one shared contract, and where most of the merge conflicts got resolved. |
+| **FastAPI + WebSockets** | Streams every engine event to the dashboard live, and records runs for offline replay. |
+| **React · TypeScript · Vite** | The cascade. A pure reducer over the event stream, so the whole visual sequence is unit-tested with no browser. |
+| **Cloudflare Pages** | Hosts the site at a clean apex, and means the public demo cannot run up an API bill. |
+| **GitHub Actions** | Gates on lint, types, 325 tests, dependency CVEs, and a history-wide secret scan that has already caught one real leak. |
 
 ## 📎 Attribution
 
