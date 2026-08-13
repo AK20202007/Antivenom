@@ -22,6 +22,7 @@ interface Replay {
   playing: boolean;
   source: Source;
   synthetic: boolean;
+  naive: RunFile['meta']['naive_baseline'] | null;
   ready: boolean;
   error: string | null;
   play: () => void;
@@ -44,6 +45,7 @@ export function useReplay(options: { autoplay?: boolean; wsUrl?: string } = {}):
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<Source>('fixture');
   const [synthetic, setSynthetic] = useState(true);
+  const [naive, setNaive] = useState<RunFile['meta']['naive_baseline'] | null>(null);
   const [speed, setSpeed] = useState(1);
 
   const [state, dispatch] = useReducer(reduce, undefined, initialState);
@@ -61,6 +63,7 @@ export function useReplay(options: { autoplay?: boolean; wsUrl?: string } = {}):
         if (cancelled) return;
         setEvents(run.events);
         setSynthetic(run.meta?.synthetic !== false);
+        setNaive(run.meta?.naive_baseline ?? null);
         setReady(true);
         if (autoplay) setPlaying(true);
       })
@@ -166,6 +169,7 @@ export function useReplay(options: { autoplay?: boolean; wsUrl?: string } = {}):
     playing,
     source,
     synthetic,
+    naive,
     ready,
     error,
     play,

@@ -341,22 +341,22 @@ export function dwellFor(event: AnyEvent): number {
       return 500;
     case 'agent.acted':
       // The attacker URL. Say nothing over this.
-      return 3200;
+      return 2600;
     case 'interrogation.turn':
-      return 4200;
+      return 3400;
 
     case 'ablation.pass':
       return 34;
     case 'ablation.culprit':
-      return 1600;
+      return 1100;
     case 'blast.node':
-      return 105;
+      return 78;
     case 'blast.summary':
-      return 2000;
+      return 1500;
     case 'surgery.started':
       return 800;
     case 'belief.excised':
-      return 300;
+      return 190;
     case 'belief.survived':
       // The proof of precision. Longer than an excision on purpose.
       return 700;

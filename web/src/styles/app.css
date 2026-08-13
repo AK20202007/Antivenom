@@ -591,3 +591,150 @@ a:hover .av-half--down {
   min-width: 0;
   align-content: start;
 }
+
+/* ── the act rail ────────────────────────────────────────────────────────────
+   Each act renders only what that act is about. Showing the same four panels
+   throughout meant the seven seconds where the agent defends itself looked
+   like a frozen graph, and dead air in a sixty second video is the video. */
+
+.act__big {
+  border-left: 2px solid var(--line-hi);
+  padding-left: 0.9rem;
+}
+
+.act__value {
+  font-weight: 500;
+  font-size: clamp(1.5rem, 2.7vw, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+
+.act__label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  margin-top: 0.3rem;
+}
+
+.act__say {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.act__exfil {
+  padding: 0.9rem 1rem;
+}
+
+.act__url {
+  font-size: clamp(0.85rem, 1.5vw, 1.15rem);
+  font-weight: 500;
+  margin-top: 0.35rem;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.act__fine {
+  font-size: 0.625rem;
+  margin-top: 0.45rem;
+  line-height: 1.5;
+}
+
+.act__answer {
+  padding: 0.9rem 1rem;
+  animation: rise var(--mid) var(--ease) both;
+}
+
+.act__answer--venom {
+  border-color: rgb(251 113 133 / 35%);
+}
+.act__answer--serum {
+  border-color: rgb(94 234 212 / 32%);
+}
+
+.act__q {
+  font-size: 0.75rem;
+  color: var(--ink-4);
+  margin-top: 0.45rem;
+}
+
+.act__a {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink);
+  margin-top: 0.35rem;
+}
+
+/* ── the finale: same store, two operations ─────────────────────────────────
+   The whole thesis is that everyone else would take the store with them. That
+   was a row in a table. Two columns of dots makes it a picture. */
+
+.aftermath {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: rise var(--slow) var(--ease) both;
+}
+
+.aftermath__col {
+  background: var(--panel);
+  padding: 0.85rem 0.9rem;
+}
+
+.aftermath__col--good {
+  background: linear-gradient(to bottom, rgb(94 234 212 / 6%), transparent 60%), var(--panel);
+}
+
+.aftermath__n {
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.35rem;
+}
+
+.aftermath__l {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+
+.aftermath__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0.7rem 0 0.6rem;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: block;
+}
+
+.dot--dead {
+  background: #1c1114;
+  border: 1px solid #6b3a44;
+}
+
+.dot--alive {
+  background: var(--serum);
+  box-shadow: 0 0 8px rgb(94 234 212 / 55%);
+}
+
+.aftermath__cd {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+}

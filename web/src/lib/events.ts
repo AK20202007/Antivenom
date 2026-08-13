@@ -224,6 +224,13 @@ export interface RunFile {
     note?: string;
     expected_survivors?: string[];
     expected_excised?: string[];
+    /** What delete-everything-downstream would have destroyed on the same store. */
+    naive_baseline?: {
+      excised: string[];
+      survived: string[];
+      rr: number;
+      cd: number;
+    };
   };
   events: AnyEvent[];
 }

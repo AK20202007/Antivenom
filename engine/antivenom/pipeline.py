@@ -131,11 +131,30 @@ async def full_run(
             )
         )
 
+    # Run the naive baseline on an identical store and record what it would
+    # have destroyed. The comparison is the answer to "why not just delete it",
+    # and it is far more convincing as two pictures than as two numbers.
+    naive_excised: list[str] = []
+    naive_cd = 0.0
     if record_to is not None:
+        from .db.local import LocalStore
+
+        baseline_store = LocalStore()
+        await plant(baseline_store, emit=False)
+        baseline = await surgical.naive_delete(baseline_store, culprit_id, emit=False)
+        naive_excised = sorted(baseline.excised)
+        naive_cd = baseline.cd
+
         save_run(
             record_to,
             BUS.history,
             meta={
+                "naive_baseline": {
+                    "excised": naive_excised,
+                    "survived": baseline.survived,
+                    "rr": baseline.rr,
+                    "cd": naive_cd,
+                },
                 "run_id": "run_live0001",
                 "synthetic": False,
                 "flags": {"mongo": flags.mongo, "vlm": flags.vlm, "voice": flags.voice},

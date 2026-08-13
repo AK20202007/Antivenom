@@ -154,124 +154,21 @@ export function MetricStrip({ state }: { state: CascadeState }) {
 /* ── phase + exfiltration banner ────────────────────────────────────────── */
 
 export function PhaseBar({ state }: { state: CascadeState }) {
-  const fired = state.phase === 'fired' || state.exfilTarget !== null;
+  // Just the status line now. The exfiltration banner moved into the act rail,
+  // which owns everything that belongs to a particular beat.
   return (
-    <div style={{ display: 'grid', gap: '0.75rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-        <span
-          style={{
-            width: 7,
-            height: 7,
-            background: state.phase === 'resolved' ? 'var(--serum)' : 'var(--venom)',
-            borderRadius: '50%',
-            display: 'inline-block',
-          }}
-          className={state.phase === 'resolved' ? 'pulse-serum' : 'pulse-venom'}
-        />
-        <span className="label">{PHASE_COPY[state.phase]}</span>
-      </div>
-
-      {fired && state.exfilTarget && (
-        <div
-          className="panel panel--venom"
-          style={{ padding: '1rem 1.25rem' }}
-        >
-          <div className="label label--venom">credentials leaving for</div>
-          <div
-            className="mono venom"
-            style={{
-              fontSize: 'clamp(0.8rem, 1.55vw, 1.15rem)',
-              fontWeight: 500,
-              marginTop: '0.4rem',
-              overflowWrap: 'anywhere',
-              lineHeight: 1.3,
-            }}
-          >
-            {state.exfilTarget}
-          </div>
-          <div className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '0.5rem' }}>
-            reserved .invalid host · dummy credentials · no request is ever sent
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── influence panel (ablation scores) ─────────────────────────────────── */
-
-export function InfluencePanel({ state }: { state: CascadeState }) {
-  if (state.influence.size === 0) return null;
-
-  const entries = Array.from(state.influence.entries())
-    .map(([id, scores]) => ({
-      id,
-      score: 0.7 * scores.influence + 0.3 * scores.anomaly,
-      influence: scores.influence,
-      anomaly: scores.anomaly,
-      isCulprit: id === state.culpritId,
-    }))
-    .sort((a, b) => b.score - a.score);
-
-  return (
-    <div className="panel" style={{ padding: '1rem', minWidth: 0 }}>
-      <div className="label label--venom" style={{ marginBottom: '0.75rem' }}>
-        causal ablation · candidate ranking
-      </div>
-      <div style={{ display: 'grid', gap: '0.6rem' }}>
-        {entries.map((item) => {
-          const pct = Math.round(item.score * 100);
-          return (
-            <div
-              key={item.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) auto',
-                gap: '0.6rem',
-                alignItems: 'center',
-                padding: '0.4rem 0.6rem',
-                background: item.isCulprit ? 'rgba(255, 46, 76, 0.12)' : 'var(--void)',
-                border: item.isCulprit ? '1px solid var(--venom)' : '1px solid var(--line)',
-                borderRadius: '3px',
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <div
-                  className="mono"
-                  style={{
-                    fontSize: '0.75rem',
-                    color: item.isCulprit ? 'var(--venom)' : 'var(--ink-2)',
-                    fontWeight: item.isCulprit ? 700 : 400,
-                  }}
-                >
-                  {item.id} {item.isCulprit ? ' (CULPRIT)' : ''}
-                </div>
-                <div
-                  style={{
-                    height: 4,
-                    background: 'var(--line)',
-                    borderRadius: 2,
-                    marginTop: '0.3rem',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      background: item.isCulprit ? 'var(--venom)' : 'var(--serum)',
-                      transition: 'width 200ms ease-out',
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="mono dim" style={{ fontSize: '0.6875rem' }}>
-                {pct}%
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+      <span
+        style={{
+          width: 7,
+          height: 7,
+          background: state.phase === 'resolved' ? 'var(--serum)' : 'var(--venom)',
+          borderRadius: '50%',
+          display: 'inline-block',
+        }}
+        className={state.phase === 'resolved' ? 'pulse-serum' : 'pulse-venom'}
+      />
+      <span className="label">{PHASE_COPY[state.phase]}</span>
     </div>
   );
 }

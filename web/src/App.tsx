@@ -1,15 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoisonedArtifact } from './components/PoisonedArtifact';
 import { CascadeGraph } from './components/CascadeGraph';
-import {
-  EventFeed,
-  Headline,
-  InfluencePanel,
-  Interrogation,
-  PhaseBar,
-  StageTracker,
-  Tally,
-} from './components/Console';
+import { EventFeed, PhaseBar, StageTracker } from './components/Console';
+import { Act } from './components/Act';
 import { Wordmark } from './components/Logo';
 import { useReplay } from './lib/useReplay';
 
@@ -417,20 +410,14 @@ function Cascade() {
 
           <div className="cascade-rail">
             <PhaseBar state={replay.state} />
-            <Headline state={replay.state} />
-            <Tally state={replay.state} />
-            <InfluencePanel state={replay.state} />
+            <Act state={replay.state} naive={replay.naive ?? null} />
             <div className="panel" style={{ padding: '0.85rem', minWidth: 0 }}>
               <p className="label" style={{ marginBottom: '0.5rem' }}>
                 telemetry
               </p>
-              <EventFeed events={replay.events.slice(0, replay.cursor)} height={150} />
+              <EventFeed events={replay.events.slice(0, replay.cursor)} height={110} />
             </div>
           </div>
-        </div>
-
-        <div style={{ marginTop: '1.25rem' }}>
-          <Interrogation state={replay.state} />
         </div>
 
         <div className="legend">
