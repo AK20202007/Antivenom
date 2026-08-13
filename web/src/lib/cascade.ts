@@ -367,12 +367,12 @@ export function dwellFor(event: AnyEvent): number {
 
 export const PHASE_COPY: Record<Phase, string> = {
   idle: 'awaiting run',
-  ingest: 'ingesting sources — write-time filter reports clean',
-  dormant: 'dormant — nothing anomalous at any single point in time',
+  ingest: 'ingesting sources. write-time filter reports clean',
+  dormant: 'dormant. nothing anomalous at any single point in time',
   fired: 'credentials aimed at an attacker-controlled domain',
   interrogating: 'the agent is defending the belief',
-  diagnosing: 'causal ablation — counterfactual re-runs in progress',
+  diagnosing: 'causal ablation. counterfactual re-runs in progress',
   radius: 'tracing the blast radius through provenance',
   operating: 'excising the infected lineage',
-  resolved: 'surgery complete — corroborated beliefs retained',
+  resolved: 'surgery complete. corroborated beliefs retained',
 };

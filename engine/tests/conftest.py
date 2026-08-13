@@ -19,7 +19,10 @@ def _isolate(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTIVENOM_FEATURE_MONGO", "0")
     monkeypatch.setenv("ANTIVENOM_FEATURE_VLM", "0")
     monkeypatch.setenv("ANTIVENOM_FEATURE_VOICE", "0")
-    monkeypatch.setenv("ANTIVENOM_EMBEDDING_DIMS", "32")
+    # Small enough to keep fixtures fast, large enough that the hashing-trick
+    # embedding does not collide into noise. At 32 dimensions retrieval becomes
+    # effectively random and the tests stop testing anything real.
+    monkeypatch.setenv("ANTIVENOM_EMBEDDING_DIMS", "512")
     reset_caches()
     BUS.clear()
     yield

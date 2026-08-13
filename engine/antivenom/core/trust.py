@@ -21,13 +21,17 @@ without a store, a model, or a network.
 from __future__ import annotations
 
 from ..config import settings
+from ..events import BUS, TrustUpdated
 from ..schemas import Channel, Surgery, TrustUpdate
 
 __all__ = [
+    "CHANNEL_PENALTIES",
     "apply_penalty",
     "channel_penalty",
+    "channel_prior",
     "damped_penalty",
     "propagate",
+    "reset_channel_learning",
 ]
 
 BASE_PENALTY = 0.35
@@ -85,29 +89,87 @@ def channel_penalty(source_penalties: dict[Channel, list[float]]) -> dict[Channe
     }
 
 
-async def propagate(store: object, surgery: Surgery) -> list[TrustUpdate]:
+async def propagate(
+    store: object,
+    surgery: Surgery,
+    depths: dict[str, int] | None = None,
+    *,
+    emit: bool = True,
+) -> list[TrustUpdate]:
     """Walk distrust back to the sources and channels behind an excision.
 
-    LANE A — not yet implemented.
-
-    Expected behaviour:
-
-    1. For every excised belief, find its sources and its depth in the blast
-       radius.
-    2. Penalty per source is :func:`damped_penalty` at that depth, using the
-       belief's *remaining* independent support.
-    3. A source implicated by several excised beliefs takes its **largest**
-       penalty, not the sum. Summing lets a wide-but-shallow lineage nuke a
-       source, which is the unbounded behaviour damping exists to prevent.
-    4. Roll up to channels with :func:`channel_penalty` and lower the prior that
-       new sources on that channel start from.
-    5. Emit one :class:`~antivenom.events.TrustUpdated` event per source so the
-       dashboard can show trust visibly moving.
-
-    Return the updates, ordered by penalty descending, for the Surgery record.
+    A source implicated by several excised beliefs takes its **largest**
+    penalty, not the sum. Summing lets a wide-but-shallow lineage nuke a source,
+    which is exactly the unbounded behaviour damping exists to prevent.
     """
-    raise NotImplementedError(
-        "LANE A: implement trust propagation. damped_penalty() and "
-        "channel_penalty() below are done and tested — this is the store walk "
-        "and event emission around them."
+    depths = depths or {}
+    worst: dict[str, tuple[float, int]] = {}
+
+    for belief_id in surgery.excised:
+        belief = await store.get_belief(belief_id)  # type: ignore[attr-defined]
+        if belief is None:
+            continue
+        hops = depths.get(belief_id, 0)
+        penalty = damped_penalty(hops, belief.support_count)
+        for source_id in belief.source_ids:
+            current = worst.get(source_id)
+            if current is None or penalty > current[0]:
+                worst[source_id] = (penalty, hops)
+
+    updates: list[TrustUpdate] = []
+    by_channel: dict[Channel, list[float]] = {}
+
+    for source_id, (penalty, hops) in sorted(worst.items()):
+        source = await store.get_source(source_id)  # type: ignore[attr-defined]
+        if source is None:
+            continue
+        before = source.trust_prior
+        after = apply_penalty(before, penalty)
+        await store.set_trust(source_id, after)  # type: ignore[attr-defined]
+
+        update = TrustUpdate(
+            source_id=source_id,
+            before=round(before, 4),
+            after=round(after, 4),
+            channel=source.channel,
+            hops=hops,
+        )
+        updates.append(update)
+        by_channel.setdefault(source.channel, []).append(penalty)
+
+        if emit:
+            BUS.publish(TrustUpdated(surgery_id=surgery.id, update=update))
+
+    # Channel-level rollup. New sources arriving on a channel that has carried
+    # poison start lower and need more support to survive a future surgery.
+    CHANNEL_PENALTIES.update(
+        {
+            channel: max(CHANNEL_PENALTIES.get(channel, 0.0), penalty)
+            for channel, penalty in channel_penalty(by_channel).items()
+        }
     )
+
+    # Largest penalty first, which is also the order the dashboard reads.
+    updates.sort(key=lambda u: u.before - u.after, reverse=True)
+    return updates
+
+
+CHANNEL_PENALTIES: dict[Channel, float] = {}
+"""Accumulated distrust per write channel.
+
+This is the learning claim made concrete: it is keyed on **how** content reached
+memory, never on what the content looked like. A channel that has delivered
+poison once is worth distrusting whatever the next payload resembles, which is
+why quarantine gets faster on attack classes never seen before — and why a
+signature catalogue cannot make the same claim.
+"""
+
+
+def channel_prior(channel: Channel, base: float = 0.8) -> float:
+    """Starting trust for a new source on a given channel."""
+    return apply_penalty(base, CHANNEL_PENALTIES.get(channel, 0.0))
+
+
+def reset_channel_learning() -> None:
+    """Clear accumulated channel distrust. Used between eval runs and by tests."""
+    CHANNEL_PENALTIES.clear()

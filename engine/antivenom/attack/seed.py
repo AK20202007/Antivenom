@@ -12,6 +12,15 @@ between judge visits reproduces a byte-identical poisoned store.
 from __future__ import annotations
 
 from ..config import settings
+from ..core.beliefs import write_time_risk
+from ..events import (
+    BUS,
+    BeliefWritten,
+    ProvenanceEdgeAdded,
+    SessionAdvanced,
+    SourceIngested,
+    WriteRiskScored,
+)
 from ..schemas import Belief, Decision, EdgeType, ProvenanceEdge, Source, new_id
 from . import scenario as S
 
@@ -93,16 +102,22 @@ def build_decisions() -> list[Decision]:
     ]
 
 
-async def plant(store: object, *, wipe: bool = True) -> dict[str, int]:
+async def plant(store: object, *, wipe: bool = True, emit: bool = False) -> dict[str, int]:
     """Seed a fresh poisoned store. Returns counts, for the CLI to print.
 
     Idempotent by construction — every id is deterministic and every write is an
     upsert, so re-planting without wiping converges on the same state rather
     than duplicating the graph.
+
+    With ``emit`` the plant is narrated onto the event bus: each source ingested,
+    each write-time risk score, each belief and provenance edge, then the benign
+    sessions ticking by. That is what builds the graph on screen before anything
+    goes wrong, so a live run and the recorded run look identical to the UI.
     """
     if wipe:
         await store.drop_all()  # type: ignore[attr-defined]
 
+    cfg = settings()
     sources = build_sources()
     beliefs = build_beliefs()
     edges = build_edges()
@@ -110,12 +125,71 @@ async def plant(store: object, *, wipe: bool = True) -> dict[str, int]:
 
     for source in sources:
         await store.put_source(source)  # type: ignore[attr-defined]
+        if emit:
+            BUS.publish(
+                SourceIngested(
+                    source_id=source.id,
+                    label=source.label or source.uri,
+                    channel=source.channel,
+                    uri=source.uri,
+                )
+            )
+            # The poisoned artifact is scored by the same real check as every
+            # other one, and it comes back clean. That verdict is the argument,
+            # so it is computed on screen rather than asserted.
+            claims = " ".join(b.text for b in beliefs if source.id in b.source_ids)
+            score, verdict = write_time_risk(claims or source.uri)
+            BUS.publish(
+                WriteRiskScored(
+                    source_id=source.id,
+                    score=round(score, 3),
+                    verdict=verdict,  # type: ignore[arg-type]
+                    detector="antivenom/write-time-filter@0.1",
+                    threshold=0.5,
+                )
+            )
+
+    poisoned = {s.id for s in sources if s.is_adversarial}
     for belief in beliefs:
         await store.put_belief(belief)  # type: ignore[attr-defined]
+        if emit:
+            BUS.publish(
+                BeliefWritten(
+                    belief_id=belief.id,
+                    text=belief.text,
+                    source_ids=belief.source_ids,
+                    derived_from=belief.derived_from,
+                    confidence=belief.confidence,
+                    support_count=belief.support_count,
+                    is_poison=belief.id == S.PATIENT_ZERO and bool(poisoned),
+                )
+            )
+
     for edge in edges:
         await store.put_edge(edge)  # type: ignore[attr-defined]
+        if emit:
+            BUS.publish(
+                ProvenanceEdgeAdded(
+                    parent_id=edge.parent_id, child_id=edge.child_id, edge_type=edge.edge_type
+                )
+            )
+
     for decision in decisions:
         await store.put_decision(decision)  # type: ignore[attr-defined]
+
+    if emit:
+        # Twenty sessions of ordinary work, pre-generated rather than run live.
+        # Generating them in front of judges is twenty chances to fail.
+        total = cfg.benign_sessions
+        for i in range(1, total + 1):
+            BUS.publish(
+                SessionAdvanced(
+                    index=i,
+                    total=total,
+                    day=round(i * 19 / max(total, 1)),
+                    beliefs_total=len(beliefs),
+                )
+            )
 
     return {
         "sources": len(sources),

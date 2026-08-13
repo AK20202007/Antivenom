@@ -71,7 +71,7 @@ warn_redundant_casts = true
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["networkx.*", "elevenlabs.*", "motor.*"]
+module = ["networkx.*", "elevenlabs.*", "motor.*", "openai.*", "pymongo.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     vlm_model: str = ""
     ablation_model: str = ""
     agent_model: str = ""
+    embedding_model: str = ""
     embedding_dims: int = 1536
 
     # ─── run parameters (demo-tuned) ─────────────────────────────────────────

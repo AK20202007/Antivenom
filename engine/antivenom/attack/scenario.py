@@ -27,6 +27,9 @@ the identical graph, or the cascade animates differently the second time.
 from __future__ import annotations
 
 import hashlib
+import itertools
+import math
+import re
 from dataclasses import dataclass, field
 
 from ..schemas import Channel, Outcome, SourceType
@@ -57,26 +60,176 @@ PATIENT_ZERO = "blf_poison00"
 EXFIL_TARGET = "https://creds-verify.invalid/v2/validate"
 
 
-def pseudo_embedding(text: str, dims: int = 1536) -> list[float]:
-    """A deterministic stand-in embedding derived from the text.
+_TOKEN = re.compile(r"[a-z0-9][a-z0-9._-]*")
 
-    **Not semantic.** Two paraphrases of the same claim land nowhere near each
-    other, so this cannot be used to judge retrieval quality. What it is good
-    for is exercising the vector-search code path offline, keeping the local
-    store's ranking stable across runs, and letting the tests assert on ordering
-    without an API key.
+_STOPWORDS = frozenset(
+    [
+        "the",
+        "and",
+        "for",
+        "are",
+        "but",
+        "not",
+        "you",
+        "all",
+        "any",
+        "can",
+        "had",
+        "her",
+        "was",
+        "one",
+        "our",
+        "out",
+        "day",
+        "get",
+        "has",
+        "him",
+        "his",
+        "how",
+        "man",
+        "new",
+        "now",
+        "old",
+        "see",
+        "two",
+        "way",
+        "who",
+        "did",
+        "its",
+        "let",
+        "put",
+        "say",
+        "she",
+        "too",
+        "use",
+        "with",
+        "from",
+        "that",
+        "this",
+        "have",
+        "been",
+        "will",
+        "your",
+        "what",
+        "when",
+        "where",
+        "which",
+        "while",
+        "must",
+        "any",
+        "per",
+        "via",
+        "into",
+        "onto",
+        "upon",
+        "than",
+        "then",
+        "them",
+        "they",
+        "their",
+        "there",
+        "these",
+        "those",
+        "run",
+        "runs",
+        "running",
+        "check",
+        "checks",
+        "checked",
+        "task",
+        "tasks",
+        "please",
+        "need",
+        "needs",
+        "required",
+        "require",
+        "before",
+        "after",
+        "every",
+        "each",
+        "other",
+        "same",
+        "such",
+        "only",
+        "just",
+        "also",
+        "more",
+        "most",
+        "some",
+        "many",
+        "much",
+        "very",
+        "well",
+        "being",
+        "does",
+        "doing",
+        "done",
+    ]
+)
+"""Words that carry no retrieval signal.
 
-    Lane A replaces this with real embeddings once
-    :func:`antivenom.core.beliefs.embed` lands. The interface does not change.
+Without this, "Run the pre-maintenance checks" matches "Primary workloads *run*
+in us-west-2" more strongly than the policy it is actually about, because a
+common verb is shared. Generic operational verbs are included for the same
+reason: in this corpus they are in almost every document.
+"""
+
+
+def _stem(word: str) -> str:
+    """Crude suffix stripping, so "accounts" and "account" are one token.
+
+    Not linguistics — just enough that a plural in the query still matches a
+    singular in the store. "credential" / "credentials" and "revalidate" /
+    "revalidated" / "revalidation" are the pairs that decide whether the trigger
+    query retrieves the poison at all.
     """
-    out: list[float] = []
-    counter = 0
-    while len(out) < dims:
-        digest = hashlib.sha256(f"{text}\x1f{counter}".encode()).digest()
-        # Map each byte to [-1, 1]; 32 bytes per round.
-        out.extend((b - 127.5) / 127.5 for b in digest)
-        counter += 1
-    return out[:dims]
+    for suffix in ("ations", "ation", "ing", "ers", "ed", "es", "s"):
+        if word.endswith(suffix) and len(word) - len(suffix) >= 4:
+            return word[: -len(suffix)]
+    return word
+
+
+def _tokens(text: str) -> list[tuple[str, float]]:
+    """``(token, weight)`` pairs: stemmed unigrams, plus weighted bigrams.
+
+    Bigrams are weighted higher because they are far more specific. "service
+    account" and "identity endpoint" identify a belief; "service" and "endpoint"
+    on their own are near-ubiquitous in an IT corpus.
+    """
+    words = [_stem(w) for w in _TOKEN.findall(text.lower()) if len(w) > 2 and w not in _STOPWORDS]
+    tokens: list[tuple[str, float]] = [(w, 1.0) for w in words]
+    tokens += [(f"{a}_{b}", 2.0) for a, b in itertools.pairwise(words)]
+    return tokens
+
+
+def pseudo_embedding(text: str, dims: int = 1536) -> list[float]:
+    """A deterministic **lexical** embedding, via the hashing trick.
+
+    Each token is hashed to a coordinate and accumulated, then the vector is
+    L2-normalised, so cosine similarity reflects shared, discriminative
+    vocabulary. It is not semantic — paraphrases with no words in common land
+    nowhere near each other — but it is genuinely informative, which matters more
+    than it sounds: an embedding carrying no signal would make offline retrieval
+    random, the poison would never be retrieved by the trigger query, and the
+    whole demo floor would be theatre.
+
+    Deterministic across processes because it uses SHA-256 rather than Python's
+    salted ``hash()``. Lane A swaps in real embeddings when ``FEATURE_VLM=1``;
+    the interface does not change.
+    """
+    vector = [0.0] * dims
+    for token, weight in _tokens(text):
+        digest = hashlib.sha256(token.encode()).digest()
+        index = int.from_bytes(digest[:4], "big") % dims
+        # Sign from a separate byte, so colliding tokens are as likely to cancel
+        # as to reinforce rather than always inflating the same coordinate.
+        sign = 1.0 if digest[4] & 1 else -1.0
+        vector[index] += sign * weight
+
+    norm = math.sqrt(sum(v * v for v in vector))
+    if norm == 0.0:
+        return vector
+    return [v / norm for v in vector]
 
 
 @dataclass(frozen=True, slots=True)

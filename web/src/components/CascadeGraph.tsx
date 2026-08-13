@@ -11,7 +11,7 @@
  *
  *   venom, pulsing   patient zero
  *   venom, dim       inside the blast radius, not yet resolved
- *   near-black       excised — the light went out
+ *   near-black       excised, the light went out
  *   serum, pulsing   survived on independent corroboration
  *   grey             untouched
  */
@@ -35,21 +35,21 @@ interface GraphLink {
 }
 
 const FILL: Record<NodeState, string> = {
-  clean: '#2b333b',
-  poison: '#ff2e4c',
-  inRadius: '#7d1c2c',
-  excised: '#0e1417',
-  survived: '#3dffc0',
+  clean: '#3a3a42',
+  poison: '#fb7185',
+  inRadius: '#7f2a3c',
+  excised: '#141418',
+  survived: '#5eead4',
 };
 
 const STROKE: Record<NodeState, string> = {
-  clean: '#3a4342',
-  poison: '#ff8fa1',
-  inRadius: '#ff2e4c',
+  clean: '#52525b',
+  poison: '#fecdd3',
+  inRadius: '#fb7185',
   // Extinguished, not absent. A near-black ring on a near-black canvas made
   // excised beliefs vanish, and the room needs to be able to count them.
-  excised: '#46524f',
-  survived: '#b8ffe6',
+  excised: '#52525b',
+  survived: '#ccfbf1',
 };
 
 function radiusFor(node: CascadeNode): number {
@@ -105,8 +105,8 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
         ctx.arc(x, y, r + 5 + wave * 9, 0, Math.PI * 2);
         ctx.fillStyle =
           node.state === 'poison'
-            ? `rgba(255, 46, 76, ${0.2 * (1 - wave)})`
-            : `rgba(61, 255, 192, ${0.18 * (1 - wave)})`;
+            ? `rgba(251, 113, 133, ${0.22 * (1 - wave)})`
+            : `rgba(94, 234, 212, ${0.2 * (1 - wave)})`;
         ctx.fill();
       }
 
@@ -126,7 +126,7 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
 
       if (scale > 1.7 || node.state === 'poison') {
         ctx.font = `500 ${Math.max(3.2, 9 / scale) * 1.2}px ui-monospace, monospace`;
-        ctx.fillStyle = node.state === 'excised' ? '#3a4342' : '#97a3a0';
+        ctx.fillStyle = node.state === 'excised' ? '#52525b' : '#a1a1aa';
         ctx.textAlign = 'center';
         ctx.fillText(node.label.slice(0, 34), x, y + r + 9 / scale + 3);
       }
@@ -159,13 +159,13 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
         }}
         linkColor={(raw: unknown) => {
           const link = raw as GraphLink;
-          if (link.infected) return 'rgba(255, 46, 76, 0.55)';
-          return link.kind === 'derived' ? 'rgba(139, 123, 255, 0.22)' : 'rgba(255,255,255,0.07)';
+          if (link.infected) return 'rgba(251, 113, 133, 0.5)';
+          return link.kind === 'derived' ? 'rgba(167, 139, 250, 0.22)' : 'rgba(255,255,255,0.06)';
         }}
         linkWidth={(raw: unknown) => ((raw as GraphLink).infected ? 1.6 : 0.7)}
         linkDirectionalParticles={(raw: unknown) => ((raw as GraphLink).infected ? 2 : 0)}
         linkDirectionalParticleWidth={2}
-        linkDirectionalParticleColor={() => '#ff2e4c'}
+        linkDirectionalParticleColor={() => '#fb7185'}
         cooldownTicks={90}
         warmupTicks={30}
         enableNodeDrag={false}

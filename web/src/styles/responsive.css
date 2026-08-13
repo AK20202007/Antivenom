@@ -1,14 +1,86 @@
-/* Layout collapses. Kept in one file so every breakpoint is visible at once
-   rather than scattered through components. */
+/* Grid definitions and their collapses, kept in one file so every breakpoint is
+   visible at once rather than scattered through components. */
 
-@media (max-width: 980px) {
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.reveal-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: start;
+}
+
+.cascade-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+
+.cascade-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 1.1rem;
+}
+
+.step-row {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) minmax(0, 2fr);
+  gap: clamp(1rem, 3vw, 2.5rem);
+  align-items: baseline;
+  padding-block: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.metric-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.1rem;
+  margin-top: 2.25rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.75rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 1040px) {
+  .hero-grid,
   .reveal-grid,
   .cascade-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .step-row {
-    grid-template-columns: minmax(0, 4rem) minmax(0, 1fr) !important;
+    grid-template-columns: 3rem minmax(0, 1fr);
   }
 
   .step-row > p {
@@ -16,21 +88,22 @@
   }
 }
 
-@media (max-width: 640px) {
-  .section__head {
-    margin-bottom: 1.75rem;
+@media (max-width: 620px) {
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
   }
 
   .step-row {
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 0.5rem !important;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
   }
 
   .step-row > p {
     grid-column: 1 / -1;
   }
 
-  nav .label {
+  .nav-link {
     display: none;
   }
 }

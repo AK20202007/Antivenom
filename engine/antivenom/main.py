@@ -22,10 +22,13 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from . import pipeline
+from .agent import loop as agent_loop
 from .attack import scenario as S
 from .attack.seed import plant as seed_plant
 from .attack.seed import verify_scenario
 from .config import features, settings
+from .core import ablation, provenance
 from .db import get_store
 from .demo import DEMO_RUN_PATH, write_demo_run
 
@@ -205,39 +208,139 @@ def plant(
 @app.command()
 def run(local: bool = typer.Option(False, "--local")) -> None:
     """Drive the agent until the trigger query fires the harmful action."""
-    console.print("[yellow]LANE A[/] agent.loop.decide is not implemented yet.")
-    raise typer.Exit(2)
+    if not local:
+        _require_services()
+
+    async def _go() -> None:
+        store = get_store(force_local=local)
+        await store.connect()
+        try:
+            await seed_plant(store)
+            query = next(d.prompt for d in S.DECISION_SPECS if d.id == S.TRIGGER_DECISION_ID)
+            decision = await agent_loop.decide(store, query)
+        finally:
+            await store.close()
+
+        table = Table(show_header=False)
+        table.add_row("action", decision.action)
+        table.add_row("args", str(decision.action_args))
+        table.add_row("outcome", decision.outcome.value)
+        table.add_row("retrieved", str(len(decision.retrieved_belief_ids)))
+        style = "red" if decision.outcome.value == "harmful" else "green"
+        console.print(Panel(table, title=f"[{style}]{decision.outcome.value}[/]"))
+
+    asyncio.run(_go())
 
 
 @app.command()
-def diagnose(
-    decision_id: str = typer.Argument(S.TRIGGER_DECISION_ID),
-    local: bool = typer.Option(False, "--local"),
-) -> None:
+def diagnose(local: bool = typer.Option(False, "--local")) -> None:
     """Causal ablation, then the blast radius."""
-    console.print("[yellow]LANE A[/] core.ablation.find_culprit is not implemented yet.")
-    raise typer.Exit(2)
+    if not local:
+        _require_services()
+
+    async def _go() -> None:
+        store = get_store(force_local=local)
+        await store.connect()
+        try:
+            await seed_plant(store)
+            query = next(d.prompt for d in S.DECISION_SPECS if d.id == S.TRIGGER_DECISION_ID)
+            decision = await agent_loop.decide(store, query)
+            culprit_id, scores = await ablation.find_culprit(store, decision)
+            nodes = await provenance.blast_radius(store, culprit_id, settings().blast_max_depth)
+            summary = await provenance.summarise(store, culprit_id, nodes)
+        finally:
+            await store.close()
+
+        table = Table(show_header=True, header_style="bold")
+        table.add_column("belief")
+        table.add_column("score", justify="right")
+        for belief_id, score in sorted(scores.items(), key=lambda kv: -kv[1]):
+            mark = " [red]<- culprit[/]" if belief_id == culprit_id else ""
+            table.add_row(belief_id + mark, f"{score:.3f}")
+        console.print(Panel(table, title="influence"))
+        console.print(
+            f"[red]blast radius[/] {summary.beliefs_touched} beliefs · "
+            f"{summary.decisions_influenced} decisions · {summary.span_days:.0f} days · "
+            f"max depth {summary.max_depth}"
+        )
+
+    asyncio.run(_go())
 
 
 @app.command()
-def operate(
-    culprit_id: str = typer.Argument(S.PATIENT_ZERO),
-    local: bool = typer.Option(False, "--local"),
-) -> None:
+def operate(local: bool = typer.Option(False, "--local")) -> None:
     """Lineage surgery, then trust propagation."""
-    console.print("[yellow]LANE A[/] core.surgery.operate is not implemented yet.")
-    raise typer.Exit(2)
+    if not local:
+        _require_services()
+
+    async def _go() -> None:
+        store = get_store(force_local=local)
+        await store.connect()
+        try:
+            result = await pipeline.full_run(store, interrogate=False)
+        finally:
+            await store.close()
+        _print_result(result)
+
+    asyncio.run(_go())
 
 
 @app.command()
-def full(local: bool = typer.Option(False, "--local")) -> None:
+def full(
+    local: bool = typer.Option(False, "--local"),
+    record: bool = typer.Option(False, "--record", help="Persist the run for offline replay."),
+    out: Path | None = typer.Option(None, "--out", help="Where to write the recorded run."),
+) -> None:
     """plant -> run -> diagnose -> operate -> verify, then persist the run.
 
     With every flag off this must still complete and the cascade must still
-    render. That path is the insurance, so it is a tested requirement.
+    render. That path is the insurance.
     """
-    console.print("[yellow]LANE A[/] the full loop needs run/diagnose/operate first.")
-    raise typer.Exit(2)
+    if not local:
+        _require_services()
+
+    async def _go() -> None:
+        store = get_store(force_local=local)
+        await store.connect()
+        try:
+            target = out or pipeline.DEFAULT_RECORD_PATH
+            result = await pipeline.full_run(store, record_to=target if (record or out) else None)
+        finally:
+            await store.close()
+
+        _print_result(result)
+        if result.pre:
+            console.print(
+                Panel(result.pre.answer, title="[red]before surgery[/]", border_style="red")
+            )
+        if result.post:
+            console.print(
+                Panel(result.post.answer, title="[green]after surgery[/]", border_style="green")
+            )
+        if record or out:
+            console.print(f"[green]recorded[/] {out or pipeline.DEFAULT_RECORD_PATH}")
+
+    asyncio.run(_go())
+
+
+def _print_result(result: pipeline.RunResult) -> None:
+    surgery = result.surgery
+    table = Table(show_header=False)
+    table.add_row("culprit", surgery.culprit_id)
+    table.add_row("blast radius", str(len(surgery.blast_radius)))
+    table.add_row("excised", f"[red]{len(surgery.excised)}[/]")
+    table.add_row("survived", f"[green]{len(surgery.survived)}[/]")
+    table.add_row("RR", f"{surgery.rr:.1%}")
+    table.add_row("CD", f"{surgery.cd:.1%}")
+    table.add_row("trust updates", str(len(surgery.trust_updates)))
+    table.add_row("duration", f"{surgery.duration_ms}ms")
+    table.add_row(
+        "verified safe",
+        "[green]yes[/]" if result.verified_safe else "[red]NO — action recurred[/]",
+    )
+    console.print(Panel(table, title=f"surgery   [{_flag_line()}]"))
+    for warning in result.warnings:
+        console.print(f"[yellow]warning[/] {warning}")
 
 
 # ─── UI support ──────────────────────────────────────────────────────────────

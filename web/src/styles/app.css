@@ -4,25 +4,26 @@
 
 /* ── typography ─────────────────────────────────────────────────────────── */
 
+/* Large but not shouting. Weight 500 at size does the work that weight 800
+   would do badly: it reads as confident rather than loud. */
 .display {
-  font-family: var(--display);
-  font-weight: 800;
+  font-family: var(--sans);
+  font-weight: 500;
   letter-spacing: -0.035em;
-  line-height: 0.94;
-  font-variation-settings: 'wdth' 100, 'opsz' 40;
+  line-height: 1.02;
 }
 
 .h1 {
-  font-size: clamp(2.75rem, 8.5vw, 6.5rem);
+  font-size: clamp(2.5rem, 6.2vw, 4.75rem);
 }
 
 .h2 {
-  font-size: clamp(2rem, 4.6vw, 3.4rem);
+  font-size: clamp(1.9rem, 4vw, 3rem);
 }
 
 .h3 {
-  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
-  letter-spacing: -0.02em;
+  font-size: clamp(1.25rem, 2.1vw, 1.6rem);
+  letter-spacing: -0.025em;
 }
 
 /* Monospace micro-label. Used above every section, so the page reads as
@@ -30,8 +31,8 @@
 .label {
   font-family: var(--mono);
   font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
+  font-weight: 400;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
@@ -49,8 +50,8 @@
 }
 
 .lede {
-  font-size: clamp(1.0625rem, 1.6vw, 1.3125rem);
-  line-height: 1.55;
+  font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
+  line-height: 1.6;
   color: var(--ink-2);
   max-width: var(--measure);
   text-wrap: pretty;
@@ -64,7 +65,17 @@
 
 .prose strong {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.prose code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0.1em 0.4em;
 }
 
 .serum {
@@ -86,68 +97,42 @@
 
 .wrap {
   width: 100%;
-  max-width: 1240px;
+  max-width: 1200px;
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
 
 .section {
-  padding-block: clamp(4.5rem, 11vh, 8.5rem);
-  border-top: var(--hairline) solid var(--line);
+  padding-block: clamp(4rem, 10vh, 7.5rem);
+  border-top: 1px solid var(--line);
 }
 
 .section__head {
-  display: flex;
-  align-items: baseline;
-  gap: 1rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.25rem;
 }
 
-.section__head::after {
-  content: '';
-  flex: 1;
-  height: var(--hairline);
-  background: var(--line);
-}
-
-/* ── corner-bracket panel ────────────────────────────────────────────────
-   The signature frame. Four L-shaped corners instead of a border, so a panel
-   reads as a field of view rather than a card. */
+/* ── panels ─────────────────────────────────────────────────────────────── */
 
 .panel {
   position: relative;
   background: var(--panel);
-  border: var(--hairline) solid var(--line);
-  padding: clamp(1.25rem, 2.5vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(1.25rem, 2.4vw, 1.75rem);
 }
 
-.panel--bracket::before,
-.panel--bracket::after {
-  content: '';
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--serum-2);
-  pointer-events: none;
+.panel--flush {
+  padding: 0;
+  overflow: hidden;
 }
 
-.panel--bracket::before {
-  top: -1px;
-  left: -1px;
-  border-right: none;
-  border-bottom: none;
+.panel--venom {
+  border-color: rgb(251 113 133 / 35%);
+  background: linear-gradient(to bottom, var(--venom-soft), transparent 70%), var(--panel);
 }
 
-.panel--bracket::after {
-  right: -1px;
-  bottom: -1px;
-  border-left: none;
-  border-top: none;
-}
-
-.panel--venom.panel--bracket::before,
-.panel--venom.panel--bracket::after {
-  border-color: var(--venom);
+.panel--serum {
+  border-color: rgb(94 234 212 / 30%);
 }
 
 /* ── buttons ────────────────────────────────────────────────────────────── */
@@ -155,33 +140,30 @@
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  font-family: var(--mono);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.9rem 1.6rem;
-  border: var(--hairline) solid transparent;
+  gap: 0.5rem;
+  font-family: var(--sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  padding: 0.7rem 1.35rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
   cursor: pointer;
+  white-space: nowrap;
   transition:
-    transform var(--fast) var(--ease),
     background var(--fast) var(--ease),
     border-color var(--fast) var(--ease),
-    color var(--fast) var(--ease);
-}
-
-.btn:active {
-  transform: translateY(1px);
+    color var(--fast) var(--ease),
+    opacity var(--fast) var(--ease);
 }
 
 .btn--primary {
-  background: var(--serum);
+  background: var(--ink);
   color: var(--void);
 }
 
 .btn--primary:hover {
-  background: #6effd0;
+  background: #ffffff;
 }
 
 .btn--ghost {
@@ -191,29 +173,22 @@
 }
 
 .btn--ghost:hover {
-  border-color: var(--serum-2);
-  color: var(--serum);
+  background: var(--panel-2);
+  border-color: var(--ink-4);
+}
+
+.btn--sm {
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.9rem;
 }
 
 /* ── metric tile ────────────────────────────────────────────────────────── */
 
-.metric {
-  border-left: 2px solid var(--line-hi);
-  padding-left: 1rem;
-}
-
-.metric--serum {
-  border-left-color: var(--serum);
-}
-.metric--venom {
-  border-left-color: var(--venom);
-}
-
 .metric__value {
-  font-family: var(--display);
-  font-weight: 800;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem);
+  line-height: 1.05;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
 }
@@ -221,26 +196,32 @@
 .metric__label {
   font-family: var(--mono);
   font-size: 0.6875rem;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--ink-3);
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.metric--serum .metric__value {
+  color: var(--serum);
+}
+.metric--venom .metric__value {
+  color: var(--venom);
 }
 
 /* ── telemetry feed ─────────────────────────────────────────────────────── */
 
 .feed {
   font-family: var(--mono);
-  font-size: 0.78125rem;
-  line-height: 1.75;
+  font-size: 0.75rem;
+  line-height: 1.7;
 }
 
 .feed__row {
   display: grid;
-  grid-template-columns: 5.5ch 1fr;
-  gap: 1rem;
-  padding-block: 0.15rem;
-  border-bottom: var(--hairline) solid rgb(255 255 255 / 3%);
+  grid-template-columns: 4.5ch 1fr;
+  gap: 0.85rem;
+  padding-block: 0.12rem;
   animation: feed-in var(--mid) var(--ease) both;
 }
 
@@ -253,33 +234,34 @@
 
 .table-scroll {
   overflow-x: auto;
-  border: var(--hairline) solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
-  min-width: 620px;
+  font-size: 0.9375rem;
+  min-width: 640px;
 }
 
 th {
   font-family: var(--mono);
   font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-weight: 400;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--ink-3);
   text-align: left;
-  padding: 0.9rem 1.1rem;
-  border-bottom: var(--hairline) solid var(--line-hi);
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--line);
   background: var(--panel-2);
   white-space: nowrap;
 }
 
 td {
-  padding: 0.9rem 1.1rem;
-  border-bottom: var(--hairline) solid var(--line);
+  padding: 0.95rem 1.1rem;
+  border-bottom: 1px solid var(--line);
   color: var(--ink-2);
   vertical-align: top;
 }
@@ -289,7 +271,7 @@ tbody tr:last-child td {
 }
 
 tbody tr.is-ours td {
-  background: rgb(61 255 192 / 4%);
+  background: var(--serum-soft);
   color: var(--ink);
 }
 
@@ -298,7 +280,7 @@ tbody tr.is-ours td {
 @keyframes feed-in {
   from {
     opacity: 0;
-    transform: translateX(-6px);
+    transform: translateX(-5px);
   }
   to {
     opacity: 1;
@@ -309,7 +291,7 @@ tbody tr.is-ours td {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -317,51 +299,24 @@ tbody tr.is-ours td {
   }
 }
 
-/* Patient zero. A slow arterial pulse — it should feel like something alive
-   and wrong, not like a notification badge. */
+/* Patient zero. A slow pulse: something alive and wrong, not a notification. */
 @keyframes pulse-venom {
   0%,
   100% {
-    box-shadow: 0 0 0 0 var(--venom-glow);
+    box-shadow: 0 0 0 0 rgb(251 113 133 / 28%);
   }
   50% {
-    box-shadow: 0 0 0 14px transparent;
+    box-shadow: 0 0 0 10px transparent;
   }
 }
 
 @keyframes pulse-serum {
   0%,
   100% {
-    box-shadow: 0 0 0 0 var(--serum-glow);
+    box-shadow: 0 0 0 0 rgb(94 234 212 / 26%);
   }
   50% {
-    box-shadow: 0 0 0 12px transparent;
-  }
-}
-
-/* A belief going dark. Brief flare, then out — the visual of a light being
-   switched off rather than an element fading away. */
-@keyframes flatline {
-  0% {
-    opacity: 1;
-    filter: brightness(1);
-  }
-  22% {
-    opacity: 1;
-    filter: brightness(2.4);
-  }
-  100% {
-    opacity: 0.16;
-    filter: brightness(0.35) saturate(0);
-  }
-}
-
-@keyframes sweep {
-  from {
-    background-position: -220% 0;
-  }
-  to {
-    background-position: 220% 0;
+    box-shadow: 0 0 0 9px transparent;
   }
 }
 
@@ -370,33 +325,16 @@ tbody tr.is-ours td {
 }
 
 .pulse-venom {
-  animation: pulse-venom 2.1s var(--ease) infinite;
+  animation: pulse-venom 2.2s var(--ease) infinite;
 }
 
 .pulse-serum {
   animation: pulse-serum 2.6s var(--ease) infinite;
 }
 
-.is-excised {
-  animation: flatline var(--slow) var(--ease) both;
-}
-
-/* Used on the hero rule and the loading state. */
-.sweep {
-  background: linear-gradient(
-    90deg,
-    transparent 20%,
-    var(--serum) 48%,
-    var(--serum) 52%,
-    transparent 80%
-  );
-  background-size: 220% 100%;
-  animation: sweep 2.8s linear infinite;
-}
-
 .stagger > * {
   animation: rise var(--mid) var(--ease) both;
-  animation-delay: calc(var(--i, 0) * 70ms);
+  animation-delay: calc(var(--i, 0) * 65ms);
 }
 
 .sr-only {

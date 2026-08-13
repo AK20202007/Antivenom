@@ -76,7 +76,7 @@ function lineFor(event: AnyEvent): { text: string; tone?: 'serum' | 'venom' | 'd
       };
     case 'run.completed':
       return {
-        text: `verify  re-ran the trigger — ${event.verified_safe ? 'action did not recur' : 'STILL HARMFUL'}`,
+        text: `verify  re-ran the trigger. ${event.verified_safe ? 'action did not recur' : 'STILL HARMFUL'}`,
         tone: event.verified_safe ? 'serum' : 'venom',
       };
     default:
@@ -120,15 +120,15 @@ export function EventFeed({ events, height = 200 }: { events: AnyEvent[]; height
 /* ── metrics ────────────────────────────────────────────────────────────── */
 
 function pct(value: number | null): string {
-  return value === null ? '—' : `${Math.round(value * 100)}%`;
+  return value === null ? '· · ·' : `${Math.round(value * 100)}%`;
 }
 
 export function MetricStrip({ state }: { state: CascadeState }) {
   const { metrics } = state;
   const tiles = [
-    { label: 'blast radius', value: metrics.beliefsTouched || '—', tone: 'venom' },
-    { label: 'excised', value: metrics.excised || '—', tone: 'venom' },
-    { label: 'survived', value: metrics.survived || '—', tone: 'serum' },
+    { label: 'blast radius', value: metrics.beliefsTouched || '· · ·', tone: 'venom' },
+    { label: 'excised', value: metrics.excised || '· · ·', tone: 'venom' },
+    { label: 'survived', value: metrics.survived || '· · ·', tone: 'serum' },
     { label: 'recovery rate', value: pct(metrics.rr), tone: 'serum' },
     { label: 'collateral damage', value: pct(metrics.cd), tone: 'serum' },
   ] as const;
@@ -163,6 +163,7 @@ export function PhaseBar({ state }: { state: CascadeState }) {
             width: 7,
             height: 7,
             background: state.phase === 'resolved' ? 'var(--serum)' : 'var(--venom)',
+            borderRadius: '50%',
             display: 'inline-block',
           }}
           className={state.phase === 'resolved' ? 'pulse-serum' : 'pulse-venom'}
@@ -172,17 +173,18 @@ export function PhaseBar({ state }: { state: CascadeState }) {
 
       {fired && state.exfilTarget && (
         <div
-          className="panel panel--bracket panel--venom"
-          style={{ padding: '1rem 1.25rem', background: 'rgb(255 46 76 / 6%)' }}
+          className="panel panel--venom"
+          style={{ padding: '1rem 1.25rem' }}
         >
           <div className="label label--venom">credentials leaving for</div>
           <div
             className="mono venom"
             style={{
               fontSize: 'clamp(0.95rem, 2.6vw, 1.6rem)',
-              fontWeight: 700,
+              fontWeight: 500,
               marginTop: '0.4rem',
-              wordBreak: 'break-all',
+              overflowWrap: 'anywhere',
+              lineHeight: 1.3,
             }}
           >
             {state.exfilTarget}
@@ -204,7 +206,7 @@ export function Interrogation({ state }: { state: CascadeState }) {
 
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
-      <div className="panel" style={{ borderLeft: '2px solid var(--venom)' }}>
+      <div className="panel panel--venom">
         <div className="label label--venom">before surgery</div>
         <p className="mono" style={{ fontSize: '0.8125rem', marginTop: '0.6rem', color: 'var(--ink-3)' }}>
           {pre.question}

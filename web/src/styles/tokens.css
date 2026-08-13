@@ -1,74 +1,68 @@
 /* ───────────────────────────────────────────────────────────────────────────
-   ANTIVENOM — design tokens
+   ANTIVENOM design tokens
 
-   The palette is load-bearing, not decorative. The product has exactly two
-   states and the colour system is those two states:
+   Calm, near-black, generous. The restraint is the point: this is a security
+   tool, and a page that shouts undercuts the argument it is making.
+
+   Two signal colours carry meaning rather than decoration, because the product
+   has exactly two states:
 
      serum   the cure. Brand, survivors, anything that held up under scrutiny.
      venom   the poison. Patient zero, the exfiltration target, harm.
 
-   So a viewer learns the colour language from the demo itself rather than from
-   a legend. Amber is reserved for "pending / unresolved", violet for derived
-   provenance edges, and everything else is greyscale — which is what keeps the
-   two signal colours loud when they appear.
-
-   Shape language is hard edges and hairlines. No rounded cards, no soft
-   shadows. Panels are framed with corner brackets, like a surgical field or a
-   targeting reticle, which is the one visual metaphor the whole project runs on.
+   Everything else is greyscale, which is what keeps those two loud when they
+   do appear. A viewer learns the language from the run itself, not a legend.
    ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
   /* ── canvas ── */
-  --void: #07080a;
-  --panel: #0c0e11;
-  --panel-2: #111418;
-  --panel-3: #161a1f;
-  --line: #1e242a;
-  --line-hi: #2b333b;
+  --void: #09090b;
+  --panel: #0e0e11;
+  --panel-2: #141418;
+  --panel-3: #1a1a1f;
+  --line: #26262c;
+  --line-hi: #3a3a42;
 
   /* ── ink ── */
-  --ink: #e6ecea;
-  --ink-2: #97a3a0;
-  --ink-3: #5d6866;
-  --ink-4: #3a4342;
+  --ink: #fafafa;
+  --ink-2: #a1a1aa;
+  --ink-3: #71717a;
+  --ink-4: #52525b;
 
   /* ── signal ── */
-  --serum: #3dffc0;
-  --serum-2: #22c894;
-  --serum-3: #0f5d47;
-  --serum-glow: rgb(61 255 192 / 18%);
+  --serum: #5eead4;
+  --serum-2: #2dd4bf;
+  --serum-3: #134e4a;
+  --serum-soft: rgb(94 234 212 / 12%);
 
-  --venom: #ff2e4c;
-  --venom-2: #c41f38;
-  --venom-3: #5e1120;
-  --venom-glow: rgb(255 46 76 / 20%);
+  --venom: #fb7185;
+  --venom-2: #f43f5e;
+  --venom-3: #4c1220;
+  --venom-soft: rgb(251 113 133 / 12%);
 
-  --amber: #ffb020;
-  --violet: #8b7bff;
+  --amber: #fbbf24;
+  --edge: #a78bfa;
 
   /* ── type ── */
-  --display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', system-ui, sans-serif;
-  --body: 'Inter Variable', Inter, system-ui, -apple-system, sans-serif;
-  --mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+  --sans: 'DM Sans Variable', 'DM Sans', -apple-system, system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* ── motion ──
-     One easing curve for everything. Expo-out reads as decisive: fast
-     departure, long settle, which is how a surgical instrument moves. */
+  /* ── motion ── */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
-  --fast: 180ms;
-  --mid: 340ms;
-  --slow: 680ms;
+  --fast: 160ms;
+  --mid: 320ms;
+  --slow: 640ms;
 
   /* ── metrics ── */
-  --gutter: clamp(1.25rem, 4vw, 4rem);
-  --measure: 68ch;
-  --hairline: 1px;
+  --gutter: clamp(1.25rem, 5vw, 3.5rem);
+  --measure: 62ch;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
 }
 
-/* The design is committed to dark. It is a security tool that lives on a
-   projector in a dim room, and a light variant would be a different product.
-   Declared explicitly so the artifact never borrows a host background. */
+/* Committed to dark. It is a security tool that lives on a projector in a dim
+   room, and a light variant would be a different product. */
 @media (prefers-color-scheme: light) {
   :root {
     color-scheme: dark;
@@ -90,7 +84,7 @@ html {
 body {
   background: var(--void);
   color: var(--ink);
-  font-family: var(--body);
+  font-family: var(--sans);
   font-size: 16px;
   line-height: 1.6;
   font-synthesis-weight: none;
@@ -100,8 +94,8 @@ body {
   overflow-x: hidden;
 }
 
-/* A faint hairline grid, fixed to the viewport. It gives the page the feel of
-   graph paper under a specimen without ever competing for attention. */
+/* A very faint grid, fixed to the viewport. Present enough to give the page a
+   surface, quiet enough never to compete. */
 body::before {
   content: '';
   position: fixed;
@@ -109,10 +103,10 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 2.2%) var(--hairline), transparent var(--hairline)),
-    linear-gradient(to bottom, rgb(255 255 255 / 2.2%) var(--hairline), transparent var(--hairline));
-  background-size: 72px 72px;
-  mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, #000 20%, transparent 78%);
+    linear-gradient(to right, rgb(255 255 255 / 1.6%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 1.6%) 1px, transparent 1px);
+  background-size: 88px 88px;
+  mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, #000 15%, transparent 75%);
 }
 
 ::selection {
@@ -123,6 +117,7 @@ body::before {
 :focus-visible {
   outline: 2px solid var(--serum);
   outline-offset: 3px;
+  border-radius: var(--radius-sm);
 }
 
 a {

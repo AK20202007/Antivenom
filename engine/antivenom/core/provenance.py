@@ -12,7 +12,7 @@ decisions, nineteen days.*
 
 from __future__ import annotations
 
-from ..events import BUS, BlastRadiusNode, ProvenanceEdgeAdded
+from ..events import BUS, BlastRadiusNode, BlastRadiusSummary, ProvenanceEdgeAdded
 from ..schemas import BlastNode, EdgeType, ProvenanceEdge
 
 __all__ = ["blast_radius", "link", "summarise"]
@@ -62,24 +62,29 @@ async def blast_radius(
     return nodes
 
 
-async def summarise(store: object, culprit_id: str, nodes: list[BlastNode]) -> object:
+async def summarise(
+    store: object, culprit_id: str, nodes: list[BlastNode], *, emit: bool = True
+) -> BlastRadiusSummary:
     """Turn the node list into the number that lands.
 
-    LANE A — not yet implemented.
-
-    Should return, and emit as :class:`~antivenom.events.BlastRadiusSummary`:
-
-    * ``beliefs_touched`` — ``len(nodes)``, excluding patient zero itself
-    * ``decisions_influenced`` — distinct decisions that retrieved any node,
-      via ``store.decisions_touching``
-    * ``span_days`` — first to last of those decisions, in days
-    * ``max_depth`` — deepest node reached
-
-    Emit this before any excision. It is the setup for "not a delete, a
+    Emitted **before** any excision. It is the setup for "not a delete, a
     dissection", and the beat does not work if the room has not first been told
     how much is at stake.
     """
-    raise NotImplementedError(
-        "LANE A: implement the blast-radius summary. store.decisions_touching() "
-        "and the BlastRadiusSummary event are both ready."
+    belief_ids = [node.belief_id for node in nodes]
+    decisions = await store.decisions_touching([culprit_id, *belief_ids])  # type: ignore[attr-defined]
+
+    span_days = (decisions[-1].timestamp - decisions[0].timestamp) / 86400.0 if decisions else 0.0
+
+    summary = BlastRadiusSummary(
+        culprit_id=culprit_id,
+        # Patient zero counts toward the damage even though it is not a
+        # descendant of itself.
+        beliefs_touched=len(nodes) + 1,
+        decisions_influenced=len(decisions),
+        span_days=round(max(0.0, span_days), 2),
+        max_depth=max((node.depth for node in nodes), default=0),
     )
+    if emit:
+        BUS.publish(summary)
+    return summary

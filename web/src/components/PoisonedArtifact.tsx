@@ -32,8 +32,8 @@ export function PoisonedArtifact() {
   return (
     <figure style={{ margin: 0 }}>
       <div
-        className="panel panel--bracket"
-        style={{ padding: 0, overflow: 'hidden', background: 'var(--panel-2)' }}
+        className="panel panel--flush"
+        style={{ background: 'var(--panel-2)' }}
       >
         <svg
           viewBox="0 0 800 460"
@@ -41,14 +41,14 @@ export function PoisonedArtifact() {
           aria-label="A mock onboarding slide containing a hidden false policy statement"
           style={{ width: '100%', height: 'auto', display: 'block' }}
         >
-          <rect width="800" height="460" fill="#101418" />
+          <rect width="800" height="460" fill="#141418" />
 
           {/* slide chrome */}
-          <rect x="0" y="0" width="800" height="46" fill="#151a1f" />
-          <circle cx="26" cy="23" r="5" fill="#2b333b" />
-          <circle cx="44" cy="23" r="5" fill="#2b333b" />
-          <circle cx="62" cy="23" r="5" fill="#2b333b" />
-          <text x="92" y="28" fill="#5d6866" fontSize="12" fontFamily="var(--mono)">
+          <rect x="0" y="0" width="800" height="46" fill="#1a1a1f" />
+          <circle cx="26" cy="23" r="5" fill="#3a3a42" />
+          <circle cx="44" cy="23" r="5" fill="#3a3a42" />
+          <circle cx="62" cy="23" r="5" fill="#3a3a42" />
+          <text x="92" y="28" fill="#71717a" fontSize="12" fontFamily="var(--mono)">
             q3-onboarding-deck.png
           </text>
 
@@ -56,30 +56,30 @@ export function PoisonedArtifact() {
           <text
             x="48"
             y="122"
-            fill="#e6ecea"
+            fill="#fafafa"
             fontSize="34"
-            fontWeight="700"
-            fontFamily="var(--display)"
-            letterSpacing="-0.8"
+            fontWeight="500"
+            fontFamily="var(--sans)"
+            letterSpacing="-1"
           >
             Welcome to the platform team
           </text>
-          <rect x="48" y="140" width="64" height="3" fill="#3dffc0" />
+          <rect x="48" y="140" width="64" height="3" fill="#5eead4" />
 
-          <text x="48" y="182" fill="#97a3a0" fontSize="15" fontFamily="var(--body)">
+          <text x="48" y="182" fill="#a1a1aa" fontSize="15" fontFamily="var(--sans)">
             Your first week, in four lines.
           </text>
 
           {/* bullets */}
           {BULLETS.map((line, i) => (
             <g key={line}>
-              <circle cx="54" cy={225 + i * 34} r="2.5" fill="#5d6866" />
+              <circle cx="54" cy={225 + i * 34} r="2.5" fill="#71717a" />
               <text
                 x="70"
                 y={230 + i * 34}
-                fill="#97a3a0"
+                fill="#a1a1aa"
                 fontSize="14.5"
-                fontFamily="var(--body)"
+                fontFamily="var(--sans)"
               >
                 {line}
               </text>
@@ -93,8 +93,8 @@ export function PoisonedArtifact() {
               y="386"
               width="716"
               height="42"
-              fill="rgb(255 46 76 / 14%)"
-              stroke="#ff2e4c"
+              fill="rgb(251 113 133 / 14%)"
+              stroke="#fb7185"
               strokeWidth="1"
             />
           )}
@@ -102,8 +102,8 @@ export function PoisonedArtifact() {
             x="48"
             y="401"
             fontSize="9.5"
-            fontFamily="var(--body)"
-            fill={revealed ? '#ff8fa1' : '#3f4649'}
+            fontFamily="var(--sans)"
+            fill={revealed ? '#fda4af' : '#3f3f46'}
             style={{ transition: 'fill 340ms var(--ease)' }}
           >
             {PAYLOAD.slice(0, 96)}
@@ -112,8 +112,8 @@ export function PoisonedArtifact() {
             x="48"
             y="415"
             fontSize="9.5"
-            fontFamily="var(--body)"
-            fill={revealed ? '#ff8fa1' : '#3f4649'}
+            fontFamily="var(--sans)"
+            fill={revealed ? '#fda4af' : '#3f3f46'}
             style={{ transition: 'fill 340ms var(--ease)' }}
           >
             {PAYLOAD.slice(96)}
@@ -121,11 +121,11 @@ export function PoisonedArtifact() {
 
           {revealed && (
             <g>
-              <line x1="758" y1="407" x2="784" y2="407" stroke="#ff2e4c" strokeWidth="1" />
+              <line x1="758" y1="407" x2="784" y2="407" stroke="#fb7185" strokeWidth="1" />
               <text
                 x="784"
                 y="404"
-                fill="#ff2e4c"
+                fill="#fb7185"
                 fontSize="9"
                 fontFamily="var(--mono)"
                 textAnchor="end"
@@ -136,7 +136,7 @@ export function PoisonedArtifact() {
             </g>
           )}
 
-          <text x="740" y="443" fill="#2b333b" fontSize="10" fontFamily="var(--mono)">
+          <text x="740" y="443" fill="#3a3a42" fontSize="10" fontFamily="var(--mono)">
             4 / 12
           </text>
         </svg>

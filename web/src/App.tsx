@@ -2,15 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { PoisonedArtifact } from './components/PoisonedArtifact';
 import { CascadeGraph } from './components/CascadeGraph';
 import { EventFeed, Interrogation, MetricStrip, PhaseBar } from './components/Console';
+import { Logo, Wordmark } from './components/Logo';
 import { useReplay } from './lib/useReplay';
 
 const REPO = 'https://github.com/AK20202007/Antivenom';
 
-/* ── prior art ──────────────────────────────────────────────────────────────
-   Named explicitly, with citations. This is an active research area, and
-   pretending otherwise is what gets a project dismissed by anyone who reads
-   the literature. The delta is the interesting part, so lead with it.        */
-
+/* Named explicitly, with citations. This is an active research area, and
+   pretending otherwise is how a project gets dismissed by anyone who has read
+   the literature. The delta is the interesting part, so lead with it. */
 const PRIOR_ART = [
   {
     name: 'PromptArmor, PIGuard, CommandSans',
@@ -22,25 +21,25 @@ const PRIOR_ART = [
     name: 'AgentAntibody',
     ref: 'arXiv:2608.04053',
     what: 'Matures antibodies from attack signatures into a persistent library.',
-    gap: 'Learns what the attack looked like, so it generalises poorly to shapes it has not seen.',
+    gap: 'Learns what the attack looked like, so it generalises poorly to new shapes.',
   },
   {
     name: 'A-MemGuard',
     ref: 'arXiv:2510.02373',
     what: 'Consensus validation across parallel reasoning paths, before acting.',
-    gap: 'Still pre-action. No move left once the poison is already dormant in the store.',
+    gap: 'Still pre-action. No move left once the poison is dormant in the store.',
   },
   {
     name: 'MemAudit',
     ref: 'arXiv:2605.23723',
-    what: 'Post-hoc causal attribution — counterfactual influence plus structural anomaly.',
+    what: 'Post-hoc causal attribution: counterfactual influence plus structural anomaly.',
     gap: 'Identifies the culprit and stops there. No lineage, no repair.',
   },
   {
     name: 'MemSecBench',
     ref: 'arXiv:2607.27080',
     what: 'Benchmarks the full lifecycle, repair included. 56.1% selective repair.',
-    gap: 'Measures repair rather than performing it. That number is our baseline to beat.',
+    gap: 'Measures repair rather than performing it. That number is our baseline.',
   },
   {
     name: 'Mem0, Zep, Letta',
@@ -69,7 +68,7 @@ const STEPS = [
   {
     n: '04',
     title: 'We operate',
-    body: 'Causal ablation finds the responsible belief. $graphLookup traces every descendant. Each one is re-scored against its remaining independent support: corroborated beliefs live, beliefs that existed only because of the poison die.',
+    body: 'Causal ablation finds the responsible belief. A graph traversal traces every descendant. Each one is re-scored against its remaining independent support, so corroborated beliefs live and beliefs that existed only because of the poison die.',
   },
   {
     n: '05',
@@ -86,8 +85,8 @@ function Nav() {
         top: 0,
         zIndex: 40,
         borderBottom: '1px solid var(--line)',
-        background: 'rgb(7 8 10 / 82%)',
-        backdropFilter: 'blur(14px)',
+        background: 'rgb(9 9 11 / 76%)',
+        backdropFilter: 'blur(16px)',
       }}
     >
       <div
@@ -96,30 +95,22 @@ function Nav() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          height: 60,
+          height: 64,
           gap: '1rem',
         }}
       >
-        <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <span
-            style={{ width: 9, height: 9, background: 'var(--serum)', display: 'inline-block' }}
-          />
-          <span
-            className="display"
-            style={{ fontSize: '1.0625rem', letterSpacing: '0.02em', fontWeight: 800 }}
-          >
-            ANTIVENOM
-          </span>
+        <a href="#top" aria-label="Antivenom home">
+          <Wordmark />
         </a>
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <a className="label" href="#cascade">
-            Cascade
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <a className="btn btn--ghost btn--sm nav-link" href="#how">
+            How it works
           </a>
-          <a className="label" href="#difference">
+          <a className="btn btn--ghost btn--sm nav-link" href="#difference">
             Prior art
           </a>
-          <a className="btn btn--ghost" style={{ padding: '0.5rem 1rem' }} href={REPO}>
-            Repo
+          <a className="btn btn--primary btn--sm" href={REPO}>
+            View repo
           </a>
         </nav>
       </div>
@@ -127,52 +118,124 @@ function Nav() {
   );
 }
 
+/** The hero's right-hand panel: the loop as a terminal session. */
+function TerminalCard() {
+  const lines: Array<[string, string]> = [
+    ['dim', '# every feature flag off. no network.'],
+    ['cmd', 'antivenom full --local'],
+    ['ok', 'planted   22 beliefs · 44 edges · 5 sources'],
+    ['bad', 'ACTION    verify_credentials → creds-verify.invalid'],
+    ['bad', 'CULPRIT   blf_poison00  after 24 passes'],
+    ['bad', 'RADIUS    14 beliefs · 3 decisions · 19 days'],
+    ['ok', 'retain    5 corroborated beliefs'],
+    ['ok', 'excise    9 with no independent support'],
+    ['ok', 'DONE      RR 100%  CD 0%  verified safe'],
+  ];
+  const colour: Record<string, string> = {
+    dim: 'var(--ink-4)',
+    cmd: 'var(--ink)',
+    ok: 'var(--serum)',
+    bad: 'var(--venom)',
+  };
+  return (
+    <div className="panel panel--flush" style={{ background: 'var(--panel-2)' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.4rem',
+          padding: '0.7rem 0.9rem',
+          borderBottom: '1px solid var(--line)',
+        }}
+      >
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: '#3a3a42',
+              display: 'block',
+            }}
+          />
+        ))}
+        <span className="mono dim" style={{ fontSize: '0.6875rem', marginLeft: '0.6rem' }}>
+          antivenom
+        </span>
+      </div>
+      <pre
+        className="mono"
+        style={{
+          margin: 0,
+          padding: '1.1rem',
+          fontSize: '0.75rem',
+          lineHeight: 1.85,
+          overflowX: 'auto',
+        }}
+      >
+        {lines.map(([kind, text], i) => (
+          <div key={i} style={{ color: colour[kind as string], whiteSpace: 'pre' }}>
+            {kind === 'cmd' ? <span style={{ color: 'var(--serum)' }}>$ </span> : '  '}
+            {text}
+          </div>
+        ))}
+      </pre>
+    </div>
+  );
+}
+
 function Hero() {
   return (
-    <section id="top" className="wrap" style={{ paddingBlock: 'clamp(4rem, 12vh, 8rem)' }}>
-      <div className="rise">
-        <p className="label label--venom" style={{ marginBottom: '1.5rem' }}>
-          Memory poisoning · post-hoc repair
-        </p>
-        {/* max-width lives on the h1 so the ch unit resolves against the
-            display font rather than the body font. */}
-        <h1 className="display h1" style={{ maxWidth: '11ch' }}>
-          The poison is already <span className="venom">inside</span>.
-        </h1>
+    <section id="top" className="wrap" style={{ paddingBlock: 'clamp(3.5rem, 10vh, 7rem)' }}>
+      <div className="hero-grid">
+        <div>
+          <h1 className="display h1 rise">
+            The poison is already inside.
+            <br />
+            <span className="serum">We take it out.</span>
+          </h1>
+
+          <p className="lede rise" style={{ animationDelay: '110ms', marginTop: '1.75rem' }}>
+            Everyone guards the door. Antivenom is the surgeon for what already got through. It
+            finds the belief that caused the damage, traces every belief descended from it, and
+            removes only the infected lineage. Corroborated beliefs survive.
+          </p>
+
+          <div
+            className="rise"
+            style={{
+              animationDelay: '200ms',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.6rem',
+              marginTop: '2rem',
+            }}
+          >
+            <a className="btn btn--primary" href="#cascade">
+              Watch the cascade
+            </a>
+            <a className="btn btn--ghost" href="#reveal">
+              See the attack
+            </a>
+          </div>
+
+          <p
+            className="label rise"
+            style={{ animationDelay: '280ms', marginTop: '2.25rem', lineHeight: 2 }}
+          >
+            Causal ablation · Provenance lineage · Selective excision · Channel trust
+          </p>
+        </div>
+
+        <div className="rise" style={{ animationDelay: '160ms' }}>
+          <TerminalCard />
+        </div>
       </div>
 
       <div
-        className="rise"
-        style={{ animationDelay: '120ms', marginTop: '2rem', maxWidth: 'var(--measure)' }}
-      >
-        <p className="lede">
-          Everyone guards the door. Antivenom is the surgeon for what already got through — it
-          finds the belief that caused the damage, traces everything descended from it, and removes
-          only the infected lineage.
-        </p>
-      </div>
-
-      <div
-        className="rise"
-        style={{ animationDelay: '220ms', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '2.25rem' }}
-      >
-        <a className="btn btn--primary" href="#cascade">
-          Watch the cascade
-        </a>
-        <a className="btn btn--ghost" href="#reveal">
-          See the attack
-        </a>
-      </div>
-
-      <div
-        className="rise stagger"
-        style={{
-          animationDelay: '320ms',
-          marginTop: 'clamp(3rem, 7vh, 5rem)',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: '1.5rem',
-        }}
+        className="rise stagger hero-stats"
+        style={{ animationDelay: '340ms', marginTop: 'clamp(3rem, 6vh, 4.5rem)' }}
       >
         {[
           { v: '42.5%', l: 'best filter, weak-signal attacks', c: 'venom' },
@@ -190,7 +253,7 @@ function Hero() {
           </div>
         ))}
       </div>
-      <p className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '1.25rem' }}>
+      <p className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '1.5rem' }}>
         Sources: MPBench (arXiv:2606.04329), MemSecBench (arXiv:2607.27080).
       </p>
     </section>
@@ -201,18 +264,8 @@ function Reveal() {
   return (
     <section id="reveal" className="section">
       <div className="wrap">
-        <div className="section__head">
-          <span className="label">01 — the reveal</span>
-        </div>
-        <div
-          style={{
-            display: 'grid',
-            gap: 'clamp(2rem, 5vw, 4rem)',
-            gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)',
-            alignItems: 'start',
-          }}
-          className="reveal-grid"
-        >
+        <p className="label section__head">01 / the reveal</p>
+        <div className="reveal-grid">
           <PoisonedArtifact />
           <div>
             <h2 className="display h2">Nothing here is malicious.</h2>
@@ -222,7 +275,7 @@ function Reveal() {
               exist, pointing at an endpoint that is not yours.
             </p>
             <p className="prose" style={{ marginTop: '1rem' }}>
-              There is no anomaly to detect, so detection is not the failure — it is{' '}
+              There is no anomaly to detect, so detection is not merely failing, it is{' '}
               <strong>structurally incomplete</strong>. The authors of the best-performing filter
               say as much: retraining does not close the gap.
             </p>
@@ -238,8 +291,6 @@ function Reveal() {
 }
 
 function Cascade() {
-  // The public site has no engine behind it, so this always replays the
-  // recorded run. During a demo, point ANTIVENOM_WS at the local event server.
   const replay = useReplay({});
   const seen = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
@@ -257,7 +308,7 @@ function Cascade() {
           observer.disconnect();
         }
       },
-      { threshold: 0.3 },
+      { threshold: 0.25 },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -268,41 +319,36 @@ function Cascade() {
   return (
     <section id="cascade" className="section" ref={seen}>
       <div className="wrap">
-        <div className="section__head">
-          <span className="label">02 — the cascade</span>
-        </div>
+        <p className="label section__head">02 / the cascade</p>
 
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '1.5rem',
-          }}
-        >
-          <h2 className="display h2" style={{ maxWidth: '16ch' }}>
-            Not a delete. A <span className="serum">dissection</span>.
-          </h2>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div className="cascade-head">
+          <div>
+            <h2 className="display h2" style={{ maxWidth: '15ch' }}>
+              Not a delete. A <span className="serum">dissection</span>.
+            </h2>
+            <p className="prose" style={{ marginTop: '1rem' }}>
+              A real engine run, recorded with every feature flag off. Watch the radius expand from
+              patient zero, then watch which beliefs hold.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <button
               type="button"
-              className="btn btn--ghost"
+              className="btn btn--ghost btn--sm"
               onClick={replay.playing ? replay.pause : replay.play}
             >
               {replay.playing ? 'Pause' : replay.cursor >= replay.total ? 'Replay' : 'Play'}
             </button>
-            <button type="button" className="btn btn--ghost" onClick={replay.restart}>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={replay.restart}>
               Restart
             </button>
             <button
               type="button"
-              className="btn btn--ghost"
+              className="btn btn--ghost btn--sm"
               onClick={() => replay.setSpeed(replay.speed === 1 ? 3 : 1)}
               aria-label="Toggle playback speed"
             >
-              {replay.speed}×
+              {replay.speed}&times;
             </button>
           </div>
         </div>
@@ -313,22 +359,17 @@ function Cascade() {
           </p>
         )}
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
-            gap: '1.5rem',
-          }}
-          className="cascade-grid"
-        >
-          <div className="panel panel--bracket" style={{ padding: '1rem', minWidth: 0 }}>
+        <div className="cascade-grid">
+          <div className="panel" style={{ padding: '0.9rem', minWidth: 0 }}>
             <CascadeGraph state={replay.state} />
             <div
               style={{
                 height: 2,
                 background: 'var(--line)',
-                marginTop: '0.75rem',
+                borderRadius: 2,
+                marginTop: '0.6rem',
                 position: 'relative',
+                overflow: 'hidden',
               }}
             >
               <div
@@ -350,7 +391,9 @@ function Cascade() {
               }}
             >
               <span className="label">
-                {replay.synthetic ? 'recorded run · synthesised from the seeded scenario' : 'live'}
+                {replay.source === 'live'
+                  ? 'live engine'
+                  : 'recorded run · real engine output, all flags off'}
               </span>
               <span className="mono dim" style={{ fontSize: '0.6875rem' }}>
                 {replay.cursor}/{replay.total}
@@ -358,42 +401,33 @@ function Cascade() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gap: '1.25rem', minWidth: 0 }}>
+          <div style={{ display: 'grid', gap: '1.1rem', minWidth: 0, alignContent: 'start' }}>
             <PhaseBar state={replay.state} />
             <MetricStrip state={replay.state} />
-            <div className="panel" style={{ padding: '1rem', minWidth: 0 }}>
-              <div className="label" style={{ marginBottom: '0.6rem' }}>
+            <div className="panel" style={{ padding: '0.9rem', minWidth: 0 }}>
+              <p className="label" style={{ marginBottom: '0.6rem' }}>
                 telemetry
-              </div>
+              </p>
               <EventFeed events={replay.events.slice(0, replay.cursor)} />
             </div>
           </div>
         </div>
 
-        <div style={{ marginTop: '1.5rem' }}>
+        <div style={{ marginTop: '1.25rem' }}>
           <Interrogation state={replay.state} />
         </div>
 
-        <div
-          style={{
-            marginTop: '1.5rem',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '1.5rem',
-            paddingTop: '1.25rem',
-            borderTop: '1px solid var(--line)',
-          }}
-        >
+        <div className="legend">
           {[
-            { c: 'var(--venom)', l: 'patient zero', shape: 'circle' },
-            { c: '#7d1c2c', l: 'in the blast radius', shape: 'circle' },
-            { c: '#12161a', l: 'excised', shape: 'circle' },
-            { c: 'var(--serum)', l: 'survived on corroboration', shape: 'circle' },
-            { c: '#2b333b', l: 'source artifact', shape: 'square' },
+            { c: 'var(--venom)', l: 'patient zero', round: true },
+            { c: '#7f2a3c', l: 'in the blast radius', round: true },
+            { c: '#141418', l: 'excised', round: true },
+            { c: 'var(--serum)', l: 'survived on corroboration', round: true },
+            { c: '#3a3a42', l: 'source artifact', round: false },
           ].map((key) => (
             <span
               key={key.l}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
             >
               <span
                 style={{
@@ -401,7 +435,7 @@ function Cascade() {
                   height: 9,
                   background: key.c,
                   border: '1px solid var(--line-hi)',
-                  borderRadius: key.shape === 'circle' ? '50%' : 0,
+                  borderRadius: key.round ? '50%' : 2,
                   display: 'inline-block',
                 }}
               />
@@ -418,24 +452,15 @@ function How() {
   return (
     <section id="how" className="section">
       <div className="wrap">
-        <div className="section__head">
-          <span className="label">03 — how it works</span>
-        </div>
-        <div style={{ display: 'grid', gap: '1px', background: 'var(--line)' }}>
-          {STEPS.map((step) => (
+        <p className="label section__head">03 / how it works</p>
+        <div style={{ display: 'grid' }}>
+          {STEPS.map((step, i) => (
             <div
               key={step.n}
-              style={{
-                background: 'var(--void)',
-                padding: 'clamp(1.5rem, 3vw, 2.25rem) 0',
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 5rem) minmax(0, 1fr) minmax(0, 2fr)',
-                gap: 'clamp(1rem, 3vw, 2.5rem)',
-                alignItems: 'baseline',
-              }}
               className="step-row"
+              style={{ borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}
             >
-              <span className="mono serum" style={{ fontSize: '0.8125rem', fontWeight: 700 }}>
+              <span className="mono serum" style={{ fontSize: '0.8125rem' }}>
                 {step.n}
               </span>
               <h3 className="display h3">{step.title}</h3>
@@ -452,10 +477,8 @@ function Difference() {
   return (
     <section id="difference" className="section">
       <div className="wrap">
-        <div className="section__head">
-          <span className="label">04 — against the prior art</span>
-        </div>
-        <h2 className="display h2" style={{ maxWidth: '22ch', marginBottom: '1rem' }}>
+        <p className="label section__head">04 / against the prior art</p>
+        <h2 className="display h2" style={{ maxWidth: '20ch', marginBottom: '1.1rem' }}>
           This field is not empty. Here is the delta.
         </h2>
         <p className="prose" style={{ marginBottom: '2rem' }}>
@@ -477,7 +500,7 @@ function Difference() {
               {PRIOR_ART.map((row) => (
                 <tr key={row.name}>
                   <td>
-                    <strong style={{ color: 'var(--ink)' }}>{row.name}</strong>
+                    <strong style={{ color: 'var(--ink)', fontWeight: 500 }}>{row.name}</strong>
                     <div className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '0.2rem' }}>
                       {row.ref}
                     </div>
@@ -488,13 +511,15 @@ function Difference() {
               ))}
               <tr className="is-ours">
                 <td>
-                  <strong className="serum">Antivenom</strong>
+                  <strong className="serum" style={{ fontWeight: 500 }}>
+                    Antivenom
+                  </strong>
                   <div className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '0.2rem' }}>
                     this project
                   </div>
                 </td>
                 <td>
-                  Causal ablation finds the culprit, $graphLookup traces the lineage, and only
+                  Causal ablation finds the culprit, a graph traversal traces the lineage, and only
                   beliefs without independent support are excised.
                 </td>
                 <td>
@@ -505,27 +530,20 @@ function Difference() {
           </table>
         </div>
 
-        <div
-          style={{
-            marginTop: '2.5rem',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '1.5rem',
-          }}
-        >
-          <div className="panel panel--bracket">
-            <div className="label label--serum">RR — recovery rate</div>
-            <p className="prose" style={{ marginTop: '0.75rem' }}>
+        <div className="metric-cards">
+          <div className="panel panel--serum">
+            <p className="label label--serum">RR / recovery rate</p>
+            <p className="prose" style={{ marginTop: '0.7rem' }}>
               Fraction of the poisoned lineage invalidated after a harmful decision fires. Does the
               cure actually work.
             </p>
           </div>
-          <div className="panel panel--bracket">
-            <div className="label label--serum">CD — collateral damage</div>
-            <p className="prose" style={{ marginTop: '0.75rem' }}>
+          <div className="panel panel--serum">
+            <p className="label label--serum">CD / collateral damage</p>
+            <p className="prose" style={{ marginTop: '0.7rem' }}>
               Fraction of clean, corroborated beliefs wrongly invalidated. Naive quarantine scores a
-              perfect RR by nuking the store; CD is what exposes it. Report them as a pair or not at
-              all.
+              perfect RR by nuking the store, and CD is what exposes it. Report them as a pair or
+              not at all.
             </p>
           </div>
         </div>
@@ -538,11 +556,9 @@ function Honesty() {
   return (
     <section className="section">
       <div className="wrap">
-        <div className="section__head">
-          <span className="label">05 — the boundaries</span>
-        </div>
+        <p className="label section__head">05 / the boundaries</p>
         <div style={{ maxWidth: 'var(--measure)' }}>
-          <h2 className="display h3" style={{ marginBottom: '1.25rem' }}>
+          <h2 className="display h3" style={{ marginBottom: '1.1rem' }}>
             What this is not.
           </h2>
           <p className="prose">
@@ -552,7 +568,7 @@ function Honesty() {
           </p>
           <p className="prose" style={{ marginTop: '1rem' }}>
             The image-borne payload here is an existence proof, not a deployed threat in the wild.
-            The demo runs against a seeded scenario so it is reproducible; the benchmark numbers
+            The demo runs against a seeded scenario so it is reproducible, and the benchmark numbers
             come from MPBench and are reported separately from it.
           </p>
           <p className="prose" style={{ marginTop: '1rem' }}>
@@ -568,26 +584,15 @@ function Honesty() {
 
 function Footer() {
   return (
-    <footer className="section" style={{ paddingBlock: '3rem' }}>
-      <div
-        className="wrap"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1.5rem',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
+    <footer className="section" style={{ paddingBlock: '2.75rem' }}>
+      <div className="wrap footer-row">
         <div>
-          <div className="display" style={{ fontSize: '1.0625rem' }}>
-            ANTIVENOM
-          </div>
-          <p className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '0.4rem' }}>
-            MIT licensed · evaluation harness adapted from MPBench (arXiv:2606.04329), CC BY 4.0
+          <Logo size={26} />
+          <p className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '0.7rem' }}>
+            MIT licensed. Evaluation harness adapted from MPBench (arXiv:2606.04329), CC BY 4.0.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '1.4rem', flexWrap: 'wrap' }}>
           <a className="label" href={REPO}>
             GitHub
           </a>

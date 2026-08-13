@@ -19,8 +19,11 @@ const run = JSON.parse(
 const events = run.events;
 
 describe('the run fixture', () => {
-  it('is stamped synthetic so it is never shown as live', () => {
-    expect(run.meta.synthetic).toBe(true);
+  it('is a real engine run, recorded on the demo floor', () => {
+    // Produced by `antivenom full --local --out`, every feature flag off. The
+    // stamp matters: a recording shown after the fact must be announced as a
+    // prior run, never presented as live.
+    expect(run.meta.synthetic).toBe(false);
   });
 
   it('contains only event types the client knows how to parse', () => {
