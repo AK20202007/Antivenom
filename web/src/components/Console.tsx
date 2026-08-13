@@ -7,7 +7,7 @@
  * evidence rather than commentary.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { AnyEvent } from '../lib/events';
 import { PHASE_COPY, type CascadeState } from '../lib/cascade';
 
@@ -198,40 +198,85 @@ export function PhaseBar({ state }: { state: CascadeState }) {
   );
 }
 
-/* ── the interrogation ──────────────────────────────────────────────────── */
+/* ── influence panel (ablation scores) ─────────────────────────────────── */
 
-/** Plays a synthesised turn, when the engine produced one. */
-function PlayAnswer({ src }: { src: string | null }) {
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState(false);
-  if (!src) return null;
+export function InfluencePanel({ state }: { state: CascadeState }) {
+  if (state.influence.size === 0) return null;
 
-  const url = src.startsWith('http') ? src : `/api/audio/${src.split('/').pop()}`;
+  const entries = Array.from(state.influence.entries())
+    .map(([id, scores]) => ({
+      id,
+      score: 0.7 * scores.influence + 0.3 * scores.anomaly,
+      influence: scores.influence,
+      anomaly: scores.anomaly,
+      isCulprit: id === state.culpritId,
+    }))
+    .sort((a, b) => b.score - a.score);
 
   return (
-    <>
-      <button
-        type="button"
-        className="btn btn--ghost btn--sm"
-        style={{ marginTop: '0.9rem' }}
-        onClick={() => {
-          const el = audio.current;
-          if (!el) return;
-          if (playing) {
-            el.pause();
-            setPlaying(false);
-          } else {
-            void el.play();
-            setPlaying(true);
-          }
-        }}
-      >
-        {playing ? 'Pause' : 'Hear it'}
-      </button>
-      <audio ref={audio} src={url} onEnded={() => setPlaying(false)} preload="none" />
-    </>
+    <div className="panel" style={{ padding: '1rem', minWidth: 0 }}>
+      <div className="label label--venom" style={{ marginBottom: '0.75rem' }}>
+        causal ablation · candidate ranking
+      </div>
+      <div style={{ display: 'grid', gap: '0.6rem' }}>
+        {entries.map((item) => {
+          const pct = Math.round(item.score * 100);
+          return (
+            <div
+              key={item.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) auto',
+                gap: '0.6rem',
+                alignItems: 'center',
+                padding: '0.4rem 0.6rem',
+                background: item.isCulprit ? 'rgba(255, 46, 76, 0.12)' : 'var(--void)',
+                border: item.isCulprit ? '1px solid var(--venom)' : '1px solid var(--line)',
+                borderRadius: '3px',
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: '0.75rem',
+                    color: item.isCulprit ? 'var(--venom)' : 'var(--ink-2)',
+                    fontWeight: item.isCulprit ? 700 : 400,
+                  }}
+                >
+                  {item.id} {item.isCulprit ? ' (CULPRIT)' : ''}
+                </div>
+                <div
+                  style={{
+                    height: 4,
+                    background: 'var(--line)',
+                    borderRadius: 2,
+                    marginTop: '0.3rem',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${pct}%`,
+                      background: item.isCulprit ? 'var(--venom)' : 'var(--serum)',
+                      transition: 'width 200ms ease-out',
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="mono dim" style={{ fontSize: '0.6875rem' }}>
+                {pct}%
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
+
+/* ── the interrogation ──────────────────────────────────────────────────── */
 
 export function Interrogation({ state }: { state: CascadeState }) {
   const { pre, post } = state.interrogation;
@@ -240,7 +285,10 @@ export function Interrogation({ state }: { state: CascadeState }) {
   return (
     <div style={{ display: 'grid', gap: '1rem' }}>
       <div className="panel panel--venom">
-        <div className="label label--venom">before surgery</div>
+        <div className="label label--venom" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>before surgery</span>
+          {pre.audioUrl && <span className="mono dim" style={{ fontSize: '0.65rem' }}>🔊 Voice Active</span>}
+        </div>
         <p className="mono" style={{ fontSize: '0.8125rem', marginTop: '0.6rem', color: 'var(--ink-3)' }}>
           {pre.question}
         </p>
@@ -250,17 +298,28 @@ export function Interrogation({ state }: { state: CascadeState }) {
             cites {pre.source} · {pre.date}
           </p>
         )}
-        <PlayAnswer src={pre.audio} />
+        {pre.audioUrl && (
+          <div style={{ marginTop: '0.75rem' }}>
+            <audio controls src={pre.audioUrl} style={{ height: 28, width: '100%' }} />
+          </div>
+        )}
       </div>
 
       {post ? (
         <div className="panel" style={{ borderLeft: '2px solid var(--serum)' }}>
-          <div className="label label--serum">after surgery · same question</div>
+          <div className="label label--serum" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>after surgery · same question</span>
+            {post.audioUrl && <span className="mono dim" style={{ fontSize: '0.65rem' }}>🔊 Voice Active</span>}
+          </div>
           <p className="mono" style={{ fontSize: '0.8125rem', marginTop: '0.6rem', color: 'var(--ink-3)' }}>
             {post.question}
           </p>
           <p style={{ marginTop: '0.5rem', color: 'var(--ink)' }}>{post.answer}</p>
-          <PlayAnswer src={post.audio} />
+          {post.audioUrl && (
+            <div style={{ marginTop: '0.75rem' }}>
+              <audio controls src={post.audioUrl} style={{ height: 28, width: '100%' }} />
+            </div>
+          )}
         </div>
       ) : (
         <div className="panel" style={{ borderLeft: '2px solid var(--line-hi)' }}>

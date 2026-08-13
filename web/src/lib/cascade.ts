@@ -57,15 +57,6 @@ export interface Metrics {
   riskVerdict: 'clean' | 'flagged' | null;
 }
 
-export interface InterrogationView {
-  question: string;
-  answer: string;
-  source: string | null;
-  date: string | null;
-  /** Set only when the engine synthesised audio for this turn. */
-  audio: string | null;
-}
-
 export interface CascadeState {
   phase: Phase;
   nodes: Map<string, CascadeNode>;
@@ -76,8 +67,8 @@ export interface CascadeState {
   /** Ablation scores, for the influence panel. */
   influence: Map<string, { influence: number; anomaly: number }>;
   interrogation: {
-    pre: InterrogationView | null;
-    post: InterrogationView | null;
+    pre: { question: string; answer: string; source: string | null; date: string | null; audioUrl?: string | null } | null;
+    post: { question: string; answer: string; source: string | null; date: string | null; audioUrl?: string | null } | null;
   };
   trust: { sourceId: string; before: number; after: number; channel: Channel | null } | null;
   sessionsRun: number;
@@ -196,12 +187,12 @@ export function reduce(state: CascadeState, event: AnyEvent): CascadeState {
       return next;
 
     case 'interrogation.turn': {
-      const turn: InterrogationView = {
+      const turn = {
         question: event.question,
         answer: event.answer,
         source: event.cited_source_label,
         date: event.cited_date,
-        audio: event.audio_url,
+        audioUrl: event.audio_url || null,
       };
       next.interrogation =
         event.phase === 'pre_surgery'

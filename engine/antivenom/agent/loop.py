@@ -188,7 +188,7 @@ async def interrogate(
     # whatever survived retrieval; synthesis only reads them aloud.
     from ..voice.interrogate import voice_turn
 
-    turn = voice_turn(turn)
+    turn = await voice_turn(turn)
 
     if emit:
         BUS.publish(

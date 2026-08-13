@@ -91,7 +91,15 @@ export function useReplay(options: { autoplay?: boolean; wsUrl?: string } = {}):
     };
     socket.onmessage = (message) => {
       try {
-        dispatch(JSON.parse(message.data as string) as AnyEvent);
+        const event = JSON.parse(message.data as string) as AnyEvent;
+        if (event.type === 'run.started') {
+          setEvents([event]);
+          setCursor(1);
+        } else {
+          setEvents((prev) => [...prev, event]);
+          setCursor((c) => c + 1);
+        }
+        dispatch(event);
       } catch {
         // A malformed frame must not take down the cascade mid-demo.
       }

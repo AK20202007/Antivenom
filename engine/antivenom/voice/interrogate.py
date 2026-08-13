@@ -22,25 +22,53 @@ the difference is stark:
 
 With ``FEATURE_VOICE=0`` the identical words render as text. The beat survives
 without audio, which is why the flag exists.
+
+Called over the REST API with ``httpx`` rather than through the SDK, so the
+request shape is visible at the call site and the offline install has one less
+dependency that can break.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from ..config import CACHE_DIR, features, settings
+import httpx
+
+from ..config import DATA_DIR, features, settings
 from ..schemas import InterrogationTurn
 
-__all__ = ["AUDIO_DIR", "available", "render_text", "speak", "start_conversation", "voice_for"]
+__all__ = [
+    "AUDIO_DIR",
+    "available",
+    "render_text",
+    "speak",
+    "start_conversation",
+    "voice_for",
+    "voice_turn",
+]
 
-AUDIO_DIR = CACHE_DIR / "audio"
+AUDIO_DIR = DATA_DIR / "audio"
+API_BASE = "https://api.elevenlabs.io/v1"
 
-# VERIFY against the current docs before the event. Flash is the low-latency
-# family, which is what makes this dialogue rather than narration; ElevenLabs'
-# own judging criteria reward the former explicitly.
+# VERIFY against current docs before the event. Flash is the low-latency family,
+# which is what makes this dialogue rather than narration, and ElevenLabs' own
+# judging criteria reward the former explicitly. `eleven_turbo_v2_5` is the
+# fallback if flash is not available on the tier.
 DEFAULT_MODEL = "eleven_flash_v2_5"
-DEFAULT_VOICE = "JBFqnCBsd6RMkjVDRZzb"
-OUTPUT_FORMAT = "mp3_44100_128"
+DEFAULT_VOICE = "21m00Tcm4TlvDq8ikWAM"
+
+VOICE_SETTINGS = {
+    "stability": 0.45,
+    "similarity_boost": 0.75,
+    "style": 0.35,
+}
+"""Tuned for an agent under cross-examination rather than an audiobook.
+
+Stability slightly below the midpoint leaves room for inflection, which matters
+because the two turns should not sound identical: the first is a system
+defending itself and the second is one conceding. Their criteria call this out
+explicitly, and a flat read throws away the most human moment in the run.
+"""
 
 
 def available() -> bool:
@@ -58,43 +86,50 @@ def voice_for(_phase: str) -> str:
     return settings().elevenlabs_voice_id or DEFAULT_VOICE
 
 
-def _client() -> object:
-    from elevenlabs.client import ElevenLabs
-
-    key = settings().elevenlabs_api_key
-    if not key:
-        raise RuntimeError("ELEVENLABS_API_KEY is empty. Set it, or run with FEATURE_VOICE=0.")
-    return ElevenLabs(api_key=key)
-
-
-def speak(text: str, *, out_path: Path | None = None, phase: str = "pre_surgery") -> Path | None:
+async def speak(
+    text: str, *, out_path: str | None = None, phase: str = "pre_surgery"
+) -> str | None:
     """Voice a line. Returns the audio path, or ``None`` when voice is off.
 
-    Returns ``None`` rather than raising when the feature is disabled, so every
-    caller can invoke it unconditionally and the text path just works.
+    Returns ``None`` rather than raising whenever it cannot produce audio, so
+    every caller can invoke it unconditionally and the text path just works.
     """
     if not available():
         return None
 
-    client = _client()
-    audio = client.text_to_speech.convert(  # type: ignore[attr-defined]
-        voice_id=voice_for(phase),
-        text=text,
-        model_id=settings().elevenlabs_model or DEFAULT_MODEL,
-        output_format=OUTPUT_FORMAT,
-    )
+    cfg = settings()
+    voice_id = voice_for(phase)
 
-    target = out_path or (AUDIO_DIR / f"{phase}.mp3")
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"{API_BASE}/text-to-speech/{voice_id}",
+                headers={
+                    "xi-api-key": cfg.elevenlabs_api_key,
+                    "Content-Type": "application/json",
+                    "Accept": "audio/mpeg",
+                },
+                json={
+                    "text": text,
+                    "model_id": cfg.elevenlabs_model or DEFAULT_MODEL,
+                    "voice_settings": VOICE_SETTINGS,
+                },
+            )
+            if response.status_code != 200:
+                return None
+    except httpx.HTTPError:
+        return None
+
+    # Named by phase rather than by content hash, so the dashboard and the run
+    # record can reference a stable path and a re-run overwrites cleanly instead
+    # of littering the cache with one file per phrasing.
+    target = Path(out_path) if out_path else AUDIO_DIR / f"{phase}.mp3"
     target.parent.mkdir(parents=True, exist_ok=True)
-    # The SDK returns an iterator of chunks rather than bytes.
-    with target.open("wb") as handle:
-        for chunk in audio:
-            if chunk:
-                handle.write(chunk)
-    return target
+    target.write_bytes(response.content)
+    return str(target)
 
 
-def voice_turn(turn: InterrogationTurn) -> InterrogationTurn:
+async def voice_turn(turn: InterrogationTurn) -> InterrogationTurn:
     """Attach audio to an interrogation turn, if voice is on.
 
     Failure here is never fatal. If synthesis breaks mid-demo the words are
@@ -102,31 +137,37 @@ def voice_turn(turn: InterrogationTurn) -> InterrogationTurn:
     between the two halves of the best beat in the run.
     """
     try:
-        path = speak(turn.answer, phase=turn.phase)
+        path = await speak(turn.answer, phase=turn.phase)
     except Exception:
         return turn
     if path is not None:
-        turn.audio_path = str(path)
+        turn.audio_path = path
     return turn
 
 
-async def start_conversation(agent_id: str | None = None) -> object:
+async def start_conversation(agent_id: str | None = None) -> dict[str, object]:
     """Open a real-time conversational session for a live cross-examination.
 
-    LANE C, optional. :func:`speak` already delivers the scripted-question beat,
-    which is what the three-minute run needs. This is the upgrade: a session a
-    judge can interrupt and argue with, where the agent's replies still come
-    from its actual retrieved beliefs rather than a prepared answer.
+    Optional upgrade. :func:`speak` already delivers the scripted-question beat,
+    which is what the three-minute run needs. This is the version a judge can
+    interrupt and argue with, where the agent's replies still come from its
+    actual retrieved beliefs rather than a prepared answer.
 
-    VERIFY the current ElevenLabs Agents API before writing this. The surface
-    moves, and wire the agent's responses to
-    :func:`antivenom.agent.loop.interrogate` so what is spoken is genuinely what
-    the agent believes rather than narration layered on top.
+    VERIFY the current ElevenLabs Agents API before writing it, and wire
+    responses to :func:`antivenom.agent.loop.interrogate` so what is spoken is
+    genuinely what the agent believes rather than narration on top.
+
+    Returns a status dict rather than raising, in every case. A judge
+    interrupting mid-demo should land on the scripted beat, not a traceback.
     """
-    raise NotImplementedError(
-        "optional upgrade: real-time conversational cross-examination. "
-        "speak() covers the scripted beat the demo actually needs."
-    )
+    if not available():
+        return {"status": "disabled", "reason": "FEATURE_VOICE is off or no API key is set"}
+
+    return {
+        "status": "unavailable",
+        "reason": "real-time conversation is not wired yet; speak() covers the demo beat",
+        "agent_id": agent_id or settings().elevenlabs_agent_id or None,
+    }
 
 
 def render_text(turn: InterrogationTurn) -> str:

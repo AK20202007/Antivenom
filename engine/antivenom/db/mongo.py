@@ -222,7 +222,10 @@ class MongoStore:
         return P.VECTOR_INDEX_NAME
 
     async def vector_index_ready(self) -> bool:
-        cursor = await self.db[P.BELIEFS].list_search_indexes(P.VECTOR_INDEX_NAME)
-        async for idx in cursor:
-            return bool(idx.get("queryable"))
+        try:
+            cursor = self.db[P.BELIEFS].list_search_indexes(P.VECTOR_INDEX_NAME)
+            async for idx in cursor:
+                return bool(idx.get("queryable"))
+        except Exception:
+            return False
         return False

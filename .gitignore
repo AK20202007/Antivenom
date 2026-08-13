@@ -38,6 +38,7 @@ web/tests/**/*-actual.png
 engine/data/runs/*.json
 !engine/data/runs/demo-run.json
 engine/data/cache/
+engine/data/audio/
 *.log
 
 # ─── os / editor ────────────────────────────────────────────────────────────

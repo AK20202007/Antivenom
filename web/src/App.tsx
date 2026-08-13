@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoisonedArtifact } from './components/PoisonedArtifact';
 import { CascadeGraph } from './components/CascadeGraph';
-import { EventFeed, Interrogation, MetricStrip, PhaseBar } from './components/Console';
+import { EventFeed, InfluencePanel, Interrogation, MetricStrip, PhaseBar } from './components/Console';
 import { Logo, Wordmark } from './components/Logo';
 import { useReplay } from './lib/useReplay';
 
@@ -308,14 +308,15 @@ function Reveal() {
 }
 
 function Cascade() {
-  // During a demo the engine serves events on localhost. On the public site
-  // nothing is listening, the socket fails instantly, and the recorded run
-  // plays instead. Same protocol either way, so the UI does not branch.
-  const replay = useReplay(
-    typeof window !== 'undefined' && window.location.hostname === 'localhost'
-      ? { wsUrl: 'ws://127.0.0.1:8787/ws' }
-      : {},
-  );
+  // Only reach for a live engine when one could plausibly be there. On the
+  // public site nothing is listening, and an unconditional socket attempt logs
+  // a console error on every visit for no benefit.
+  const wsUrl =
+    (import.meta.env.VITE_WS_URL as string | undefined) ||
+    (typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'ws://127.0.0.1:8787/ws'
+      : undefined);
+  const replay = useReplay(wsUrl ? { wsUrl } : {});
   const seen = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
 
@@ -428,6 +429,7 @@ function Cascade() {
           <div style={{ display: 'grid', gap: '1.1rem', minWidth: 0, alignContent: 'start' }}>
             <PhaseBar state={replay.state} />
             <MetricStrip state={replay.state} />
+            <InfluencePanel state={replay.state} />
             <div className="panel" style={{ padding: '0.9rem', minWidth: 0 }}>
               <p className="label" style={{ marginBottom: '0.6rem' }}>
                 telemetry

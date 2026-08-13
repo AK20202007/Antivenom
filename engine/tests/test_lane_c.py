@@ -28,26 +28,26 @@ def test_voice_is_unavailable_when_the_flag_is_off():
     assert voice.available() is False
 
 
-def test_speak_returns_none_rather_than_raising_when_voice_is_off():
+async def test_speak_returns_none_rather_than_raising_when_voice_is_off():
     """Callers invoke it unconditionally, so the disabled path must be a no-op
     rather than an exception every call site has to guard."""
-    assert voice.speak("anything") is None
+    assert await voice.speak("anything") is None
 
 
-def test_voice_turn_is_a_passthrough_when_voice_is_off():
+async def test_voice_turn_is_a_passthrough_when_voice_is_off():
     turn = _turn()
-    assert voice.voice_turn(turn).audio_path is None
+    assert (await voice.voice_turn(turn)).audio_path is None
 
 
-def test_synthesis_failure_never_takes_down_the_run(monkeypatch: pytest.MonkeyPatch):
+async def test_synthesis_failure_never_takes_down_the_run(monkeypatch: pytest.MonkeyPatch):
     """A missing audio file is much better than a traceback between the two
     halves of the best beat in the demo."""
 
-    def explode(*_a: object, **_kw: object) -> None:
+    async def explode(*_a: object, **_kw: object) -> None:
         raise RuntimeError("elevenlabs is down")
 
     monkeypatch.setattr(voice, "speak", explode)
-    turn = voice.voice_turn(_turn())
+    turn = await voice.voice_turn(_turn())
     assert turn.answer, "the words survive even when the audio does not"
     assert turn.audio_path is None
 
