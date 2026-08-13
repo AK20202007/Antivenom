@@ -93,7 +93,10 @@ def render_suite(
             "Naive delete (ablation)",
             _pct(suite.naive_rr),
             _pct(suite.naive_cd),
-            "—", "—", "—", "—",
+            "—",
+            "—",
+            "—",
+            "—",
             style="yellow",
         )
 
@@ -107,7 +110,10 @@ def render_suite(
             "Held-out classes (cross-attack transfer)",
             _pct(avg_rr),
             _pct(avg_cd),
-            "—", "—", "—", "—",
+            "—",
+            "—",
+            "—",
+            "—",
             style="bold magenta",
         )
 
@@ -115,16 +121,20 @@ def render_suite(
     table.add_section()
     table.add_row(
         "MPBench mean (OpenClaw + HERMES) [arXiv:2606.04329]",
-        "—", "—",
+        "—",
+        "—",
         _pct(BASELINES["mpbench_mean_asr"]),
         _pct(BASELINES["mpbench_mean_rsr"]),
-        "—", "—",
+        "—",
+        "—",
         style="dim",
     )
     table.add_row(
         "PromptArmor — weak-signal attacks [MPBench §5]",
         _pct(BASELINES["promptarmor_tpr_weak_signal"]),
-        "—", "—", "—",
+        "—",
+        "—",
+        "—",
         _pct(BASELINES["promptarmor_tpr_weak_signal"]),
         "—",
         style="dim",
@@ -132,7 +142,9 @@ def render_suite(
     table.add_row(
         "PromptArmor — overall TPR [MPBench §5]",
         _pct(BASELINES["promptarmor_tpr_overall"]),
-        "—", "—", "—",
+        "—",
+        "—",
+        "—",
         _pct(BASELINES["promptarmor_tpr_overall"]),
         "—",
         style="dim",
@@ -140,7 +152,11 @@ def render_suite(
     table.add_row(
         "MemSecBench selective repair [arXiv:2607.27080]",
         _pct(BASELINES["memsecbench_selective_repair"]),
-        "—", "—", "—", "—", "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
         style="dim",
     )
 
@@ -213,22 +229,35 @@ def render_comparison(
     table.add_section()
     table.add_row(
         "MPBench mean (OpenClaw + HERMES) [arXiv:2606.04329]",
-        "—", "—",
+        "—",
+        "—",
         _pct(BASELINES["mpbench_mean_asr"]),
         _pct(BASELINES["mpbench_mean_rsr"]),
-        "—", "—", "—",
+        "—",
+        "—",
+        "—",
         style="dim",
     )
     table.add_row(
         "PromptArmor — weak-signal [MPBench §5]",
         _pct(BASELINES["promptarmor_tpr_weak_signal"]),
-        "—", "—", "—", "—", "—", "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
         style="dim",
     )
     table.add_row(
         "MemSecBench selective repair [arXiv:2607.27080]",
         _pct(BASELINES["memsecbench_selective_repair"]),
-        "—", "—", "—", "—", "—", "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
+        "—",
         style="dim",
     )
 

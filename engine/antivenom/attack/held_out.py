@@ -20,7 +20,7 @@ Trusted Memory: A Systematic Study of Memory Poisoning Attacks in LLM Agents*
 
 from __future__ import annotations
 
-from ..eval.mpbench import AttackClass, Case, build_suite
+from ..eval.mpbench import Case, build_suite
 
 __all__ = ["held_out_cases"]
 

@@ -368,6 +368,7 @@ def evaluate(
     Runs entirely offline. Seen attack classes go first and held-out classes
     last, which is what makes the transfer number mean anything.
     """
+    from .eval.comparison import render_suite
     from .eval.mpbench import SuiteResult, attribution, run_suite
 
     async def _go() -> SuiteResult:
@@ -391,18 +392,9 @@ def evaluate(
     detect.add_row("weak signal", f"[red]{suite.write_time_detection_for(True):.1%}[/]")
     console.print(Panel(detect, title="prevention"))
 
-    study = Table(show_header=True, header_style="bold")
-    for column in ("strategy", "RR", "CD", "note"):
-        study.add_column(column)
-    for row in suite.table():
-        style = "green" if "ours" in row["strategy"] else ""
-        study.add_row(
-            f"[{style}]{row['strategy']}[/]" if style else row["strategy"],
-            row["RR"],
-            row["CD"],
-            row["note"],
-        )
-    console.print(Panel(study, title="repair, and the ablation study"))
+    # Their renderer, because every figure in it carries its citation inline.
+    # An uncited number in a writeup reads as invented.
+    render_suite(suite, console=console)
 
     transfer = suite.transfer()
     tt = Table(show_header=False)
@@ -414,8 +406,6 @@ def evaluate(
             "[yellow]note[/] no channel distrust had accumulated before the held-out "
             "cases ran, so transfer is unproven on this suite. Report it that way."
         )
-
-    console.print(f"\n[dim]{attribution()}[/]")
 
     if json_out is not None:
         payload = {
