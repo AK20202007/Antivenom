@@ -1,0 +1,48 @@
+# ─── secrets ────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ─── python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+
+# ─── node ───────────────────────────────────────────────────────────────────
+node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+coverage/
+.wrangler/
+
+# ─── playwright ─────────────────────────────────────────────────────────────
+test-results/
+playwright-report/
+blob-report/
+web/tests/**/*-actual.png
+
+# ─── runtime artifacts ──────────────────────────────────────────────────────
+engine/data/runs/*.json
+!engine/data/runs/demo-run.json
+engine/data/cache/
+*.log
+
+# ─── os / editor ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
