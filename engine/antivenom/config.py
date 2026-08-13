@@ -37,7 +37,12 @@ FIXTURES_DIR = DATA_DIR / "fixtures"
 class Features(BaseSettings):
     """Independently disableable integrations."""
 
-    model_config = SettingsConfigDict(env_prefix="ANTIVENOM_FEATURE_", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="ANTIVENOM_FEATURE_",
+        env_file=(REPO_ROOT / ".env", ENGINE_ROOT / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     mongo: bool = True
     vlm: bool = True
