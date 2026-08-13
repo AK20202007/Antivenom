@@ -48,12 +48,22 @@ stage.
 | `ANTIVENOM_ABLATION_MODEL` | `openai/gpt-5-nano` | runs 24x per diagnosis, so cost and latency bite here |
 | `ANTIVENOM_AGENT_MODEL` | `openai/gpt-5-mini` | tool calling, follows a stored policy unprompted |
 
-**OpenRouter serves no embeddings endpoint.** If you want real semantic
-embeddings rather than the offline lexical ones, they have to come from
-Fireworks or Atlas's own embedding API, and `ANTIVENOM_EMBEDDING_DIMS` must
-match whatever you pick or the vector index returns nothing.
+**Embeddings come from MongoDB, not from the chat provider.** OpenRouter serves
+no embeddings endpoint at all, so vectors come from MongoDB's Embedding and
+Reranking API (Voyage AI) at `https://ai.mongodb.com/v1/embeddings`. That keeps
+embeddings, the vector index and the graph traversal on one platform, and it
+means OpenRouter credits alone are enough to run everything.
 
-To run on Fireworks instead:
+```bash
+MONGODB_EMBEDDING_API_KEY=...          # from the Atlas UI
+ANTIVENOM_EMBEDDING_MODEL=voyage-3.5
+ANTIVENOM_EMBEDDING_DIMS=1024          # must match the vector index exactly
+```
+
+Leave the key blank and it falls back to the offline lexical embedding, which
+works but is not semantic.
+
+To run chat on Fireworks instead:
 
 ```bash
 ANTIVENOM_PROVIDER=fireworks
@@ -65,30 +75,17 @@ Both providers speak the OpenAI wire format, so nothing else changes.
 `ANTIVENOM_USE_LANGCHAIN=1` routes through LangChain for provider-agnostic
 handles and tracing; behaviour is identical either way.
 
-## 3. Cloudflare auto-deploy
+## 3. Deploying the site
 
-The site is already live at [antivenom.pages.dev](https://antivenom.pages.dev)
-and manual deploys work today:
+Deploys are manual, on purpose. CI builds and tests the front end but does not
+publish, so no API token has to exist anywhere. Your local `wrangler` OAuth
+login is the only credential involved.
 
 ```bash
 cd web && npm run build && npx wrangler pages deploy dist --project-name antivenom
 ```
 
-Auto-deploy on push needs two repo secrets. **Wrangler's stored credential is an
-OAuth token and cannot be reused here**, so the API token has to be created in
-the dashboard:
-
-1. [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
-   → **Create Token** → template **Edit Cloudflare Workers**, or a custom token
-   with **Account · Cloudflare Pages · Edit**.
-2. Copy it once; it is not shown again.
-
-```bash
-gh secret set CLOUDFLARE_API_TOKEN --repo AK20202007/Antivenom --body "<token>"
-gh secret set CLOUDFLARE_ACCOUNT_ID --repo AK20202007/Antivenom --body "e5e342f3ca2f33158f6f1dd40c039be0"
-```
-
-Then every push to `main` publishes, and every PR gets its own preview URL.
+That publishes to [antivenom.pages.dev](https://antivenom.pages.dev).
 
 ## 4. ElevenLabs
 

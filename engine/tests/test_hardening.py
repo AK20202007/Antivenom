@@ -104,7 +104,9 @@ async def test_the_guard_catches_a_signal_free_embedding(
     import antivenom.attack.seed as seed_module
 
     monkeypatch.setattr(seed_module, "S", S)
-    monkeypatch.setattr("antivenom.llm.embed_text", lambda text, dims=None: [0.0] * 512)
+    monkeypatch.setattr(
+        "antivenom.llm.embed_text", lambda text, dims=None, is_query=False: [0.0] * 512
+    )
 
     problems = await verify_retrieval(planted)
     assert problems, "a zero-signal embedding must be caught, not tolerated"

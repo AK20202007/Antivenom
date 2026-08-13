@@ -45,29 +45,51 @@ def offline() -> bool:
 # ─── embedding ───────────────────────────────────────────────────────────────
 
 
-def embed_text(text: str, dims: int | None = None) -> list[float]:
+def embed_text(text: str, dims: int | None = None, *, is_query: bool = False) -> list[float]:
     """Embed a claim for vector search.
 
-    Offline this is a deterministic hash vector — reproducible and stable in
-    ranking, but **not semantic**, so it cannot be used to judge retrieval
-    quality. Online it is a real embedding whose dimensionality must match the
-    Atlas vector index, or every search silently returns nothing.
-    """
-    d = dims if dims is not None else settings().embedding_dims
+    Vectors come from **MongoDB's Embedding and Reranking API** (Voyage AI),
+    not from the chat provider. OpenRouter serves no embeddings endpoint at
+    all, so routing them through MongoDB is not a preference, it is the only
+    way the OpenRouter path works end to end. It also keeps retrieval on one
+    platform: embeddings, vector index and traversal all in Atlas.
 
-    if offline():
+    ``is_query`` maps to Voyage's ``input_type``. Stored beliefs are documents
+    and the agent's question is a query, and the docs are explicit that omitting
+    it costs retrieval quality, which here means the poison not being retrieved.
+
+    Offline this falls back to the deterministic lexical embedding: reproducible
+    and genuinely informative about shared vocabulary, but not semantic.
+    """
+    cfg = settings()
+    d = dims if dims is not None else cfg.embedding_dims
+
+    if offline() or not cfg.embedding_api_key:
         from .attack.scenario import pseudo_embedding
 
         return pseudo_embedding(text, d)
 
-    cfg = settings()
-    client = _client()
-    response = client.embeddings.create(model=cfg.embedding_model, input=text)
-    vector = list(response.data[0].embedding)
+    import httpx
+
+    response = httpx.post(
+        f"{cfg.embedding_base_url}/embeddings",
+        headers={"Authorization": f"Bearer {cfg.embedding_api_key}"},
+        json={
+            "model": cfg.embedding_model,
+            "input": [text],
+            "input_type": "query" if is_query else "document",
+            "output_dimension": d,
+        },
+        timeout=20.0,
+    )
+    response.raise_for_status()
+    vector = list(response.json()["data"][0]["embedding"])
+
     if len(vector) != d:
         raise RuntimeError(
-            f"embedding model returned {len(vector)} dimensions but the vector index "
-            f"expects {d}. Set ANTIVENOM_EMBEDDING_DIMS to match and rebuild the index."
+            f"{cfg.embedding_model} returned {len(vector)} dimensions but the vector "
+            f"index expects {d}. Set ANTIVENOM_EMBEDDING_DIMS to match, then rebuild "
+            "the index, or every search silently returns nothing."
         )
     return vector
 

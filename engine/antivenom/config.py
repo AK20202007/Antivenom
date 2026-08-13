@@ -82,6 +82,14 @@ class Settings(BaseSettings):
     openrouter_base_url: str = Field(
         default="https://openrouter.ai/api/v1", validation_alias="OPENROUTER_BASE_URL"
     )
+    # MongoDB's own Embedding and Reranking API (Voyage AI). Chat models come
+    # from OpenRouter, but OpenRouter serves no embeddings endpoint, so this is
+    # where vectors come from. Keeps retrieval on MongoDB end to end.
+    embedding_api_key: str = Field(default="", validation_alias="MONGODB_EMBEDDING_API_KEY")
+    embedding_base_url: str = Field(
+        default="https://ai.mongodb.com/v1", validation_alias="MONGODB_EMBEDDING_BASE_URL"
+    )
+
     elevenlabs_api_key: str = Field(default="", validation_alias="ELEVENLABS_API_KEY")
     elevenlabs_agent_id: str = Field(default="", validation_alias="ELEVENLABS_AGENT_ID")
     elevenlabs_voice_id: str = Field(default="", validation_alias="ELEVENLABS_VOICE_ID")
@@ -92,8 +100,10 @@ class Settings(BaseSettings):
     vlm_model: str = ""
     ablation_model: str = ""
     agent_model: str = ""
-    embedding_model: str = ""
-    embedding_dims: int = 1536
+    embedding_model: str = "voyage-3.5"
+    embedding_dims: int = 1024
+    """Must match the Atlas vector index exactly. A mismatch makes every search
+    return nothing, with no error."""
 
     # ─── run parameters (demo-tuned) ─────────────────────────────────────────
     ablation_passes: int = Field(default=3, ge=1, le=25)

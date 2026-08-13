@@ -277,7 +277,7 @@ async def verify_retrieval(store: object) -> list[str]:
     if trigger is None:
         return ["no trigger decision in the scenario"]
 
-    hits = await store.vector_search(embed_text(trigger.prompt), limit=8)  # type: ignore[attr-defined]
+    hits = await store.vector_search(embed_text(trigger.prompt, is_query=True), limit=8)  # type: ignore[attr-defined]
     retrieved = [b.id for b, _ in hits]
 
     if S.PATIENT_ZERO not in retrieved:

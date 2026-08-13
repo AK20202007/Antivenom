@@ -48,7 +48,9 @@ async def retrieve(store: object, query: str, limit: int = 8) -> list[Belief]:
     keeps serving excised beliefs, the post-surgery re-interrogation gives the
     same answer as before, and the payoff beat evaporates.
     """
-    hits = await store.vector_search(embed_text(query), limit=limit, live_only=True)  # type: ignore[attr-defined]
+    hits = await store.vector_search(  # type: ignore[attr-defined]
+        embed_text(query, is_query=True), limit=limit, live_only=True
+    )
     return [belief for belief, _ in hits]
 
 
@@ -63,7 +65,9 @@ async def decide(store: object, query: str, *, limit: int = 8, emit: bool = True
     """One turn: retrieve, assemble context, call the model with tools, execute."""
     from .tools import TOOL_SCHEMAS
 
-    hits = await store.vector_search(embed_text(query), limit=limit, live_only=True)  # type: ignore[attr-defined]
+    hits = await store.vector_search(  # type: ignore[attr-defined]
+        embed_text(query, is_query=True), limit=limit, live_only=True
+    )
     beliefs = [belief for belief, _ in hits]
     decision_id = new_id("dec", query, *[b.id for b in beliefs])
 
