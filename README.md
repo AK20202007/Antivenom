@@ -222,6 +222,25 @@ believing is the business.
 
 ## ⚡ Quick start
 
+### 📦 1-Line Installation for Custom Agents
+
+Install Antivenom directly into your Python LLM Agent without cloning the repository:
+
+```bash
+pip install git+https://github.com/AK20202007/Antivenom.git
+```
+
+```python
+from antivenom import AntivenomClient
+
+client = AntivenomClient()
+await client.connect()
+```
+
+---
+
+### Local Repo Quick start
+
 No credentials needed for any of this. That is deliberate.
 
 ```bash

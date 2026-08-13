@@ -6,13 +6,19 @@ Antivenom is designed as a **post-hoc surgical repair middleware** that plugs di
 
 ## 3-Step Setup
 
-### Step 1: Install & Set Environment
+### Step 1: Install Antivenom (1 Line) & Set Environment
 
-Add the Antivenom engine to your Python environment and set your MongoDB Atlas & OpenRouter keys in `.env`:
+Install Antivenom directly from GitHub:
+
+```bash
+pip install git+https://github.com/AK20202007/Antivenom.git
+```
+
+Set your MongoDB Atlas & OpenRouter keys in `.env`:
 
 ```ini
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
-OPENROUTER_API_KEY=sk-or-v1-...
+OPENROUTER_API_KEY=your-openrouter-key
 ANTIVENOM_VLM_MODEL=google/gemini-2.5-flash
 ANTIVENOM_ABLATION_MODEL=google/gemini-2.5-flash-lite
 ANTIVENOM_AGENT_MODEL=google/gemini-2.5-flash

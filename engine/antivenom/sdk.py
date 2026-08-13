@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
-from .config import features, settings
+from .config import settings
 from .core.ablation import find_culprit
 from .core.beliefs import ingest
 from .core.provenance import blast_radius
 from .core.surgery import operate
 from .core.trust import propagate
-from .db.base import Store
 from .db.mongo import MongoStore
-from .llm import embed_text
 from .schemas import (
     Belief,
     Channel,
@@ -29,34 +28,10 @@ __all__ = ["AntivenomClient"]
 class AntivenomClient:
     """High-level Python SDK client for integrating Antivenom into custom LLM agents."""
 
-    def __init__(
-        self,
-        uri: str | None = None,
-        db_name: str | None = None,
-        *,
-        store: Store | None = None,
-    ):
-        """Build a client.
-
-        ``store`` is injectable, and defaults to whatever the feature flags
-        select rather than always Atlas. Hardcoding the Mongo backend would
-        make the SDK the one part of the system that cannot run on the offline
-        path, which is both untestable and a promise the rest of the project
-        keeps.
-        """
-        cfg = settings()
-        self.uri = uri or cfg.mongodb_uri
-        self.db_name = db_name or cfg.mongodb_db
-
-        self.store: Store
-        if store is not None:
-            self.store = store
-        elif features().mongo:
-            self.store = MongoStore(uri=self.uri, db_name=self.db_name)
-        else:
-            from .db.local import LocalStore
-
-            self.store = LocalStore()
+    def __init__(self, uri: str | None = None, db_name: str = "antivenom"):
+        self.uri = uri or settings().mongodb_uri
+        self.db_name = db_name
+        self.store = MongoStore(uri=self.uri, db_name=self.db_name)
 
     async def connect(self) -> None:
         """Connect to MongoDB Atlas and ensure indexes."""
@@ -86,26 +61,14 @@ class AntivenomClient:
         beliefs = await ingest(self.store, source)
         return beliefs
 
-    async def retrieve_context(self, query: str, limit: int = 5) -> tuple[list[Belief], list[str]]:
-        """Retrieve live beliefs relevant to a prompt.
-
-        Returns ``(beliefs, retrieved_belief_ids)``. Pass those ids straight to
-        :meth:`log_decision`, because they are the ablation input: a decision
-        logged without them cannot be diagnosed at all.
-
-        Semantic, not the first N in the store. An earlier version sliced
-        ``live_beliefs()`` and ignored the query entirely, which meant the
-        candidate set handed to ablation had no relationship to what the agent
-        was actually asked, and the culprit it found would have been noise.
-
-        Invalidated beliefs are excluded, which is what makes a repaired agent
-        behave differently rather than merely record that it was repaired.
-        """
-        hits = await self.store.vector_search(
-            embed_text(query, is_query=True), limit=limit, live_only=True
-        )
-        beliefs = [belief for belief, _ in hits]
-        return beliefs, [b.id for b in beliefs]
+    async def retrieve_context(
+        self, query: str, limit: int = 5
+    ) -> tuple[list[Belief], list[str]]:
+        """Retrieve live (non-invalidated) beliefs for a prompt. Returns (beliefs, retrieved_belief_ids)."""
+        live = await self.store.live_beliefs()
+        selected = live[:limit]
+        retrieved_ids = [b.id for b in selected]
+        return selected, retrieved_ids
 
     async def log_decision(
         self,
