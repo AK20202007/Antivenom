@@ -1,6 +1,8 @@
-import asyncio
+"""Tests for voice interrogation."""
 
-"""Tests for voice interrogation module."""
+from __future__ import annotations
+
+import asyncio
 
 from antivenom.config import reset_caches
 from antivenom.schemas import InterrogationTurn
