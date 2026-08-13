@@ -120,6 +120,9 @@ function Nav() {
           <a className="btn btn--ghost btn--sm nav-link" href="#difference">
             Prior art
           </a>
+          <a className="btn btn--ghost btn--sm nav-link" href="#integrate">
+            Integrate
+          </a>
           <a className="btn btn--primary btn--sm" href={REPO}>
             Steal the code
           </a>
@@ -578,11 +581,114 @@ function Difference() {
   );
 }
 
+function Integration() {
+  const [activeStep, setActiveStep] = useState<number>(0);
+
+  const snippets = [
+    {
+      title: '1. Connect Client to MongoDB Atlas',
+      code: `from antivenom import AntivenomClient
+from antivenom.schemas import SourceType, Channel, Outcome
+
+# 1. Initialize Antivenom client connected to MongoDB Atlas
+client = AntivenomClient()
+await client.connect()`,
+    },
+    {
+      title: '2. Ingest Artifact & Retrieve Context',
+      code: `# 2. Ingest an untrusted artifact (stores atomic beliefs & provenance in MongoDB)
+beliefs = await client.ingest_artifact(
+    uri="s3://my-bucket/policy_update.png",
+    type_=SourceType.IMAGE,
+    channel=Channel.UPLOAD,
+    label="policy_update.png"
+)
+
+# 3. When your agent receives a prompt, retrieve live (non-invalidated) beliefs
+retrieved_beliefs, retrieved_ids = await client.retrieve_context(user_prompt, limit=5)`,
+    },
+    {
+      title: '3. Log Decision & Perform Surgical Repair',
+      code: `# 4. Log your agent's decision and the retrieved belief IDs used as context
+decision = await client.log_decision(
+    prompt=user_prompt,
+    action=agent_action_name,
+    action_args=agent_action_args,
+    retrieved_belief_ids=retrieved_ids,
+    outcome=Outcome.HARMFUL if is_harmful else Outcome.OK
+)
+
+# 5. If a harmful action fires, execute post-hoc surgical repair:
+if decision.outcome == Outcome.HARMFUL:
+    repair = await client.repair_memory(decision)
+    print("Culprit excised:", repair["culprit_id"])
+    print("Infected lineage excised:", repair["excised"])
+    print("Corroborated clean beliefs survived:", repair["survived"])`,
+    },
+  ];
+
+  return (
+    <section id="integrate" className="section">
+      <div className="wrap">
+        <SectionHead n="05" title="custom agent integration" note="plug surgical memory repair into your own agent in 3 lines" />
+        <h2 className="display h2" style={{ maxWidth: '22ch', marginBottom: '1rem' }}>
+          Connect <span className="serum">your own agent</span> to Antivenom.
+        </h2>
+        <p className="prose" style={{ marginBottom: '2rem' }}>
+          Antivenom works with any Python agent framework (LangChain, LlamaIndex, OpenAI Assistants, AutoGen, CrewAI, or custom loops) backed by MongoDB Atlas.
+        </p>
+
+        <div className="panel" style={{ padding: '1.25rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            {snippets.map((s, idx) => (
+              <button
+                key={s.title}
+                type="button"
+                className={`btn btn--sm ${activeStep === idx ? 'btn--primary' : 'btn--ghost'}`}
+                onClick={() => setActiveStep(idx)}
+              >
+                {s.title}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <pre
+              className="mono"
+              style={{
+                background: 'var(--void)',
+                border: '1px solid var(--line)',
+                borderRadius: '4px',
+                padding: '1.25rem',
+                fontSize: '0.8125rem',
+                overflowX: 'auto',
+                color: '#3dffc0',
+                lineHeight: 1.6,
+              }}
+            >
+              <code>{(snippets[activeStep]?.code) ?? (snippets[0]?.code ?? '')}</code>
+            </pre>
+          </div>
+        </div>
+
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <a className="btn btn--ghost btn--sm" href={`${REPO}/blob/main/docs/INTEGRATION_GUIDE.md`}>
+            Read the full Integration Guide →
+          </a>
+          <a className="btn btn--ghost btn--sm" href={`${REPO}/blob/main/examples/custom_agent_integration.py`}>
+            View Python Example Script →
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Honesty() {
   return (
     <section className="section">
       <div className="wrap">
-        <SectionHead n="05" title="the boundaries" note="what we are not claiming" />
+        <SectionHead n="06" title="the boundaries" note="what we are not claiming" />
         <h2 className="display h2" style={{ maxWidth: '18ch', marginBottom: '2rem' }}>
           What this is <span className="venom">not</span>.
         </h2>
@@ -653,6 +759,7 @@ export default function App() {
         <Cascade />
         <How />
         <Difference />
+        <Integration />
         <Honesty />
       </main>
       <Footer />
