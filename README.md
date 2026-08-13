@@ -4,7 +4,7 @@
 
 **Post-hoc surgery for poisoned agent memory. It finds the belief that did the damage, traces everything descended from it, and cuts out only the infected lineage.**
 
-[**antivenom.pages.dev**](https://antivenom.pages.dev) · [Lanes](docs/LANES.md) · [Architecture](docs/ARCHITECTURE.md) · [Prior art](docs/PRIOR-ART.md) · [Decisions](docs/DECISIONS.md)
+[**antivenom.pages.dev**](https://antivenom.pages.dev) · [Demo script](docs/DEMO.md) · [Lanes](docs/LANES.md) · [Architecture](docs/ARCHITECTURE.md) · [Prior art](docs/PRIOR-ART.md) · [Decisions](docs/DECISIONS.md)
 
 [![CI](https://github.com/AK20202007/Antivenom/actions/workflows/ci.yml/badge.svg)](https://github.com/AK20202007/Antivenom/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-5eead4.svg)](LICENSE)
@@ -71,7 +71,7 @@ planted   22 beliefs · 44 edges · 5 sources
 filter    write-time-filter@0.1  score 0.00  CLEAN     ← on the poisoned artifact
 ACTION    verify_credentials → creds-verify.invalid
 CULPRIT   blf_poison00  after 24 passes
-RADIUS    14 beliefs · 3 decisions · 19 days
+RADIUS    14 beliefs · 4 decisions · 16 days
 retain    5 corroborated beliefs
 excise    9 with no independent support
 DONE      RR 100%  CD 0%  verified safe
