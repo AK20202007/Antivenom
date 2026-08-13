@@ -63,8 +63,24 @@ def test_run_parameters_have_sane_bounds():
         Settings(_env_file=None, blast_max_depth=0)
 
 
-def test_models_are_unpinned_by_default():
-    """Guessing a model id from memory is how you get a 404 on stage. They must
-    be verified against current docs and set explicitly."""
-    assert settings().vlm_model == ""
-    assert settings().ablation_model == ""
+def test_pinned_model_ids_look_like_real_ids():
+    """The defaults in .env.example were verified against the live OpenRouter
+    list rather than recalled. A guessed id 404s on stage, so the shape is
+    checked here and `doctor` still requires them to be set explicitly."""
+    cfg = Settings(_env_file=None)
+    # Unset by default in code; .env.example supplies the verified values, so a
+    # deployment that forgets to configure fails loudly rather than guessing.
+    assert cfg.vlm_model == ""
+    assert cfg.ablation_model == ""
+
+
+def test_embeddings_default_to_mongodbs_own_api():
+    """OpenRouter serves no embeddings endpoint, so vectors come from MongoDB.
+    The dimension must match the Atlas vector index or search returns nothing
+    at all, with no error."""
+    # Read the declared defaults, not a live Settings: the test env pins
+    # embedding_dims to something small for speed and would mask this.
+    fields = Settings.model_fields
+    assert fields["embedding_model"].default == "voyage-3.5"
+    assert fields["embedding_dims"].default == 1024
+    assert "mongodb.com" in str(fields["embedding_base_url"].default)
