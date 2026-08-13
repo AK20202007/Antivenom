@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#07080a"/>
+  <g stroke="#ffffff" stroke-opacity="0.03">
+    <path d="M72 0V630M144 0V630M216 0V630M288 0V630M360 0V630M432 0V630M504 0V630M576 0V630M648 0V630M720 0V630M792 0V630M864 0V630M936 0V630M1008 0V630M1080 0V630M1152 0V630"/>
+    <path d="M0 72H1200M0 144H1200M0 216H1200M0 288H1200M0 360H1200M0 432H1200M0 504H1200M0 576H1200"/>
+  </g>
+  <rect x="80" y="86" width="12" height="12" fill="#3dffc0"/>
+  <text x="108" y="98" fill="#e6ecea" font-family="system-ui,sans-serif" font-size="21" font-weight="800" letter-spacing="1">ANTIVENOM</text>
+  <text x="80" y="230" fill="#e6ecea" font-family="system-ui,sans-serif" font-size="86" font-weight="800" letter-spacing="-3">The poison is</text>
+  <text x="80" y="320" fill="#e6ecea" font-family="system-ui,sans-serif" font-size="86" font-weight="800" letter-spacing="-3">already <tspan fill="#ff2e4c">inside</tspan>.</text>
+  <rect x="80" y="360" width="88" height="4" fill="#3dffc0"/>
+  <text x="80" y="424" fill="#97a3a0" font-family="system-ui,sans-serif" font-size="27">Everyone guards the door. We are the surgeon for what already</text>
+  <text x="80" y="462" fill="#97a3a0" font-family="system-ui,sans-serif" font-size="27">got through — post-hoc surgical repair for poisoned agent memory.</text>
+  <text x="80" y="556" fill="#5d6866" font-family="ui-monospace,monospace" font-size="19" letter-spacing="3">CAUSAL ABLATION  ·  PROVENANCE LINEAGE  ·  SELECTIVE EXCISION</text>
+  <circle cx="1050" cy="300" r="58" fill="none" stroke="#3dffc0" stroke-width="7"/>
+  <path d="M1050 242V358" stroke="#ff2e4c" stroke-width="7"/>
+</svg>

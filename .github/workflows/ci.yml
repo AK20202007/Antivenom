@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  engine:
+    name: engine
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Format
+        run: ruff format --check .
+
+      - name: Typecheck
+        run: mypy antivenom
+
+      # Every flag off. The suite must pass with no credentials and no network,
+      # because that offline path is the demo floor and it only stays working
+      # if it is the path CI exercises.
+      - name: Test
+        env:
+          ANTIVENOM_FEATURE_MONGO: '0'
+          ANTIVENOM_FEATURE_VLM: '0'
+          ANTIVENOM_FEATURE_VOICE: '0'
+        run: pytest --cov=antivenom --cov-report=term-missing
+
+      # The seeded scenario is a demo dependency: no children means no cascade,
+      # one survivor reads as luck. Guard it like code.
+      - name: Verify the demo fixture
+        env:
+          ANTIVENOM_FEATURE_MONGO: '0'
+          ANTIVENOM_FEATURE_VLM: '0'
+          ANTIVENOM_FEATURE_VOICE: '0'
+        run: antivenom doctor
+
+      # The committed run drives the dashboard. If regenerating it produces a
+      # different stream, the two have drifted and the UI tests are lying.
+      - name: Recorded run is reproducible
+        env:
+          ANTIVENOM_FEATURE_MONGO: '0'
+          ANTIVENOM_FEATURE_VLM: '0'
+          ANTIVENOM_FEATURE_VOICE: '0'
+        run: |
+          antivenom demo --write
+          git diff --exit-code data/runs/demo-run.json \
+            || (echo "::error::demo-run.json is stale — commit the regenerated run" && exit 1)
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Parses the Python-generated fixture against the TypeScript event types.
+      # This is where a cross-language contract break surfaces.
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 7

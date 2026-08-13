@@ -1,0 +1,36 @@
+/* Layout collapses. Kept in one file so every breakpoint is visible at once
+   rather than scattered through components. */
+
+@media (max-width: 980px) {
+  .reveal-grid,
+  .cascade-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .step-row {
+    grid-template-columns: minmax(0, 4rem) minmax(0, 1fr) !important;
+  }
+
+  .step-row > p {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .section__head {
+    margin-bottom: 1.75rem;
+  }
+
+  .step-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  .step-row > p {
+    grid-column: 1 / -1;
+  }
+
+  nav .label {
+    display: none;
+  }
+}

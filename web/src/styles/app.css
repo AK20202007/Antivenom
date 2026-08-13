@@ -1,0 +1,411 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Components and motion.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── typography ─────────────────────────────────────────────────────────── */
+
+.display {
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+  font-variation-settings: 'wdth' 100, 'opsz' 40;
+}
+
+.h1 {
+  font-size: clamp(2.75rem, 8.5vw, 6.5rem);
+}
+
+.h2 {
+  font-size: clamp(2rem, 4.6vw, 3.4rem);
+}
+
+.h3 {
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  letter-spacing: -0.02em;
+}
+
+/* Monospace micro-label. Used above every section, so the page reads as
+   instrumented rather than marketed. */
+.label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.label--serum {
+  color: var(--serum-2);
+}
+.label--venom {
+  color: var(--venom);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.lede {
+  font-size: clamp(1.0625rem, 1.6vw, 1.3125rem);
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+.prose {
+  color: var(--ink-2);
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.serum {
+  color: var(--serum);
+}
+.venom {
+  color: var(--venom);
+}
+.dim {
+  color: var(--ink-3);
+}
+
+/* ── layout ─────────────────────────────────────────────────────────────── */
+
+.shell {
+  position: relative;
+  z-index: 1;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.section {
+  padding-block: clamp(4.5rem, 11vh, 8.5rem);
+  border-top: var(--hairline) solid var(--line);
+}
+
+.section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.section__head::after {
+  content: '';
+  flex: 1;
+  height: var(--hairline);
+  background: var(--line);
+}
+
+/* ── corner-bracket panel ────────────────────────────────────────────────
+   The signature frame. Four L-shaped corners instead of a border, so a panel
+   reads as a field of view rather than a card. */
+
+.panel {
+  position: relative;
+  background: var(--panel);
+  border: var(--hairline) solid var(--line);
+  padding: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.panel--bracket::before,
+.panel--bracket::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--serum-2);
+  pointer-events: none;
+}
+
+.panel--bracket::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.panel--bracket::after {
+  right: -1px;
+  bottom: -1px;
+  border-left: none;
+  border-top: none;
+}
+
+.panel--venom.panel--bracket::before,
+.panel--venom.panel--bracket::after {
+  border-color: var(--venom);
+}
+
+/* ── buttons ────────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.9rem 1.6rem;
+  border: var(--hairline) solid transparent;
+  cursor: pointer;
+  transition:
+    transform var(--fast) var(--ease),
+    background var(--fast) var(--ease),
+    border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  background: var(--serum);
+  color: var(--void);
+}
+
+.btn--primary:hover {
+  background: #6effd0;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-hi);
+}
+
+.btn--ghost:hover {
+  border-color: var(--serum-2);
+  color: var(--serum);
+}
+
+/* ── metric tile ────────────────────────────────────────────────────────── */
+
+.metric {
+  border-left: 2px solid var(--line-hi);
+  padding-left: 1rem;
+}
+
+.metric--serum {
+  border-left-color: var(--serum);
+}
+.metric--venom {
+  border-left-color: var(--venom);
+}
+
+.metric__value {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric__label {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 0.5rem;
+}
+
+/* ── telemetry feed ─────────────────────────────────────────────────────── */
+
+.feed {
+  font-family: var(--mono);
+  font-size: 0.78125rem;
+  line-height: 1.75;
+}
+
+.feed__row {
+  display: grid;
+  grid-template-columns: 5.5ch 1fr;
+  gap: 1rem;
+  padding-block: 0.15rem;
+  border-bottom: var(--hairline) solid rgb(255 255 255 / 3%);
+  animation: feed-in var(--mid) var(--ease) both;
+}
+
+.feed__seq {
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── tables ─────────────────────────────────────────────────────────────── */
+
+.table-scroll {
+  overflow-x: auto;
+  border: var(--hairline) solid var(--line);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 620px;
+}
+
+th {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: left;
+  padding: 0.9rem 1.1rem;
+  border-bottom: var(--hairline) solid var(--line-hi);
+  background: var(--panel-2);
+  white-space: nowrap;
+}
+
+td {
+  padding: 0.9rem 1.1rem;
+  border-bottom: var(--hairline) solid var(--line);
+  color: var(--ink-2);
+  vertical-align: top;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr.is-ours td {
+  background: rgb(61 255 192 / 4%);
+  color: var(--ink);
+}
+
+/* ── motion ─────────────────────────────────────────────────────────────── */
+
+@keyframes feed-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Patient zero. A slow arterial pulse — it should feel like something alive
+   and wrong, not like a notification badge. */
+@keyframes pulse-venom {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--venom-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@keyframes pulse-serum {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--serum-glow);
+  }
+  50% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
+/* A belief going dark. Brief flare, then out — the visual of a light being
+   switched off rather than an element fading away. */
+@keyframes flatline {
+  0% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  22% {
+    opacity: 1;
+    filter: brightness(2.4);
+  }
+  100% {
+    opacity: 0.16;
+    filter: brightness(0.35) saturate(0);
+  }
+}
+
+@keyframes sweep {
+  from {
+    background-position: -220% 0;
+  }
+  to {
+    background-position: 220% 0;
+  }
+}
+
+.rise {
+  animation: rise var(--slow) var(--ease) both;
+}
+
+.pulse-venom {
+  animation: pulse-venom 2.1s var(--ease) infinite;
+}
+
+.pulse-serum {
+  animation: pulse-serum 2.6s var(--ease) infinite;
+}
+
+.is-excised {
+  animation: flatline var(--slow) var(--ease) both;
+}
+
+/* Used on the hero rule and the loading state. */
+.sweep {
+  background: linear-gradient(
+    90deg,
+    transparent 20%,
+    var(--serum) 48%,
+    var(--serum) 52%,
+    transparent 80%
+  );
+  background-size: 220% 100%;
+  animation: sweep 2.8s linear infinite;
+}
+
+.stagger > * {
+  animation: rise var(--mid) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
