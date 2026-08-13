@@ -26,6 +26,10 @@ dependencies = [
   # hang tracing. None of it is imported on the offline path, so the demo
   # floor still runs with no network.
   "openai>=1.57",
+  # langchain 1.3.2 carries PYSEC-2026-2192; 1.3.9 is the fix. Pinned as a
+  # floor rather than left to the resolver, because a transitive downgrade
+  # would silently reintroduce it.
+  "langchain>=1.3.9",
   "langchain-core>=0.3",
   "langchain-openai>=0.2",
   "langchain-fireworks>=0.2",

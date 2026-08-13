@@ -14,6 +14,34 @@ permissions:
   contents: read
 
 jobs:
+  secrets:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The repo is public. A key that lands here is compromised the moment it
+      # is pushed, so this checks the whole history rather than the diff.
+      - name: Scan history for credentials
+        run: |
+          if git grep -nIE \
+            "sk-or-v1-[A-Za-z0-9]{20,}|fw_[A-Za-z0-9]{18,}|mongodb\+srv://[^<[:space:]]*:[^<@[:space:]]+@" \
+            $(git rev-list --all) -- . ':!*.lock' ':!*package-lock.json' 2>/dev/null; then
+            echo "::error::a credential-shaped string is present in git history"
+            exit 1
+          fi
+          echo "no credentials found in history"
+
+      - name: .env must never be tracked
+        run: |
+          if git log --all --full-history --oneline -- .env | grep -q .; then
+            echo "::error::.env appears in git history"
+            exit 1
+          fi
+          echo ".env has never been committed"
+
   engine:
     name: engine
     runs-on: ubuntu-latest
@@ -29,6 +57,14 @@ jobs:
 
       - name: Install
         run: uv pip install --system -e ".[dev]"
+
+      # Dependency CVEs. langchain 1.3.2 shipped PYSEC-2026-2192, and a
+      # transitive downgrade would silently reintroduce it, so this gates
+      # rather than warns.
+      - name: Audit dependencies
+        run: |
+          uv pip install --system pip-audit
+          pip-audit --progress-spinner off
 
       - name: Lint
         run: ruff check .
@@ -86,6 +122,9 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
 
       - name: Lint
         run: npm run lint
