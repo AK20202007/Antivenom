@@ -145,6 +145,12 @@ class Settings(BaseSettings):
     # ─── event server ────────────────────────────────────────────────────────
     host: str = "127.0.0.1"
     port: int = 8787
+    api_token: str = ""
+    """Optional bearer token for the local event channel.
+
+    Required when ``host`` is anything other than loopback. Leave empty for the
+    default localhost-only demo path.
+    """
 
     @property
     def api_key(self) -> str:

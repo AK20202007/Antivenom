@@ -21,14 +21,19 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://antivenom.pages.dev/" />
     <meta property="og:site_name" content="Antivenom" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content="Antivenom · surgery for poisoned agent memory" />
     <meta
       property="og:description"
       content="Everyone guards the door. We operate on what already got in."
     />
-    <meta property="og:image" content="https://antivenom.pages.dev/og.svg" />
+    <meta property="og:image" content="https://antivenom.pages.dev/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Antivenom: the poison is already inside. Post-hoc surgical repair for poisoned agent memory."
+    />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Antivenom · surgery for poisoned agent memory" />
@@ -36,29 +41,59 @@
       name="twitter:description"
       content="Everyone guards the door. We operate on what already got in."
     />
-    <meta name="twitter:image" content="https://antivenom.pages.dev/og.svg" />
+    <meta name="twitter:image" content="https://antivenom.pages.dev/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Antivenom: the poison is already inside. Post-hoc surgical repair for poisoned agent memory."
+    />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="apple-mobile-web-app-title" content="Antivenom" />
 
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareSourceCode",
-        "name": "Antivenom",
-        "description": "Post-hoc surgical repair for poisoned agent memory. Finds the belief that caused the damage, traces everything descended from it, and removes only the infected lineage.",
-        "codeRepository": "https://github.com/AK20202007/Antivenom",
-        "programmingLanguage": ["Python", "TypeScript"],
-        "license": "https://opensource.org/licenses/MIT",
-        "url": "https://antivenom.pages.dev/",
-        "applicationCategory": "SecurityApplication",
-        "keywords": "agent memory poisoning, prompt injection, AI security, provenance graph, causal ablation"
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "Antivenom",
+            "url": "https://antivenom.pages.dev/",
+            "description": "Post-hoc surgical repair for poisoned agent memory."
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "Antivenom",
+            "applicationCategory": "SecurityApplication",
+            "operatingSystem": "Any",
+            "description": "Post-hoc surgical repair for poisoned agent memory. Finds the belief that caused the damage, traces everything descended from it, and removes only the infected lineage.",
+            "url": "https://antivenom.pages.dev/",
+            "codeRepository": "https://github.com/AK20202007/Antivenom",
+            "license": "https://opensource.org/licenses/MIT",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "keywords": "agent memory poisoning, prompt injection, AI security, provenance graph, causal ablation"
+          }
+        ]
       }
     </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main style="max-width:42rem;margin:4rem auto;padding:0 1.25rem;font-family:system-ui,sans-serif;color:#e6ecea;background:#07080a">
+        <h1>Antivenom</h1>
+        <p>
+          Post-hoc surgical repair for poisoned agent memory. Enable JavaScript to run the cascade
+          demo, or read the source on GitHub.
+        </p>
+        <p>
+          <a href="https://github.com/AK20202007/Antivenom" style="color:#3dffc0"
+            >github.com/AK20202007/Antivenom</a
+          >
+        </p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
