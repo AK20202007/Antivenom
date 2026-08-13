@@ -374,3 +374,67 @@ tbody tr.is-ours td {
   padding: 0.38rem 0.8rem;
   white-space: nowrap;
 }
+
+/* ── wordmark ───────────────────────────────────────────────────────────────
+   ANTI is the cure, VENOM is the poison. The name already carries both states
+   of the system, so the colour only has to point at what is already there. It
+   means the palette needs no legend anywhere else on the page. */
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.wordmark__text {
+  font-family: var(--wordmark);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: 0.055em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.wordmark__anti {
+  color: var(--ink);
+}
+
+.wordmark__venom {
+  color: var(--venom);
+}
+
+/* The halves sit slightly apart at rest, so the cut is legible without
+   interaction, and open further on hover. The concept is an incision, so the
+   one thing the mark should do when touched is open. */
+.av-half {
+  transition: transform var(--mid) var(--ease);
+}
+
+.av-half--up {
+  transform: translateY(-1.1px);
+}
+
+.av-half--down {
+  transform: translateY(1.1px);
+}
+
+.wordmark:hover .av-half--up,
+a:hover .av-half--up {
+  transform: translateY(-2.6px);
+}
+
+.wordmark:hover .av-half--down,
+a:hover .av-half--down {
+  transform: translateY(2.6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark:hover .av-half--up,
+  a:hover .av-half--up {
+    transform: translateY(-1.1px);
+  }
+  .wordmark:hover .av-half--down,
+  a:hover .av-half--down {
+    transform: translateY(1.1px);
+  }
+}

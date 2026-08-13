@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { PoisonedArtifact } from './components/PoisonedArtifact';
 import { CascadeGraph } from './components/CascadeGraph';
 import { EventFeed, InfluencePanel, Interrogation, MetricStrip, PhaseBar } from './components/Console';
-import { Logo, Wordmark } from './components/Logo';
+import { Wordmark } from './components/Logo';
 import { useReplay } from './lib/useReplay';
 
 const REPO = 'https://github.com/AK20202007/Antivenom';
@@ -622,7 +622,7 @@ function Footer() {
     <footer className="section" style={{ paddingBlock: '2.75rem' }}>
       <div className="wrap footer-row">
         <div>
-          <Logo size={26} />
+          <Wordmark size={26} />
           <p className="mono dim" style={{ fontSize: '0.6875rem', marginTop: '0.7rem' }}>
             MIT licensed. Evaluation harness adapted from MPBench (arXiv:2606.04329), CC BY 4.0.
           </p>
