@@ -24,7 +24,7 @@ from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from ..config import features, settings
 from ..demo import DEMO_RUN_PATH
@@ -88,6 +88,20 @@ def create_app(run_path: Path | None = None) -> FastAPI:
     @app.get("/api/history")
     async def history() -> dict[str, Any]:
         return {"events": [EVENT_ADAPTER.dump_python(e, mode="json") for e in BUS.history]}
+
+    @app.get("/api/audio/{name}")
+    async def audio(name: str) -> FileResponse | JSONResponse:
+        """Serve a synthesised interrogation clip.
+
+        Filename only, resolved inside the audio directory, so a crafted name
+        cannot walk out of it.
+        """
+        from ..voice.interrogate import AUDIO_DIR
+
+        target = (AUDIO_DIR / Path(name).name).resolve()
+        if not target.is_file() or AUDIO_DIR.resolve() not in target.parents:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        return FileResponse(target, media_type="audio/mpeg")
 
     @app.websocket("/ws")
     async def ws(socket: WebSocket) -> None:

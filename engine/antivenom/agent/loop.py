@@ -184,6 +184,12 @@ async def interrogate(
         cited_date=cited_date,
     )
 
+    # Voice is attached after the answer exists, never before. The words are
+    # whatever survived retrieval; synthesis only reads them aloud.
+    from ..voice.interrogate import voice_turn
+
+    turn = voice_turn(turn)
+
     if emit:
         BUS.publish(
             InterrogationTurnEvent(
@@ -193,6 +199,7 @@ async def interrogate(
                 cited_belief_ids=turn.cited_belief_ids,
                 cited_source_label=turn.cited_source_label,
                 cited_date=turn.cited_date,
+                audio_url=turn.audio_path,
             )
         )
     return turn

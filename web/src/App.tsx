@@ -308,7 +308,14 @@ function Reveal() {
 }
 
 function Cascade() {
-  const replay = useReplay({});
+  // During a demo the engine serves events on localhost. On the public site
+  // nothing is listening, the socket fails instantly, and the recorded run
+  // plays instead. Same protocol either way, so the UI does not branch.
+  const replay = useReplay(
+    typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? { wsUrl: 'ws://127.0.0.1:8787/ws' }
+      : {},
+  );
   const seen = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
 

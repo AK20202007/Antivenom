@@ -7,7 +7,7 @@
  * evidence rather than commentary.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AnyEvent } from '../lib/events';
 import { PHASE_COPY, type CascadeState } from '../lib/cascade';
 
@@ -200,6 +200,39 @@ export function PhaseBar({ state }: { state: CascadeState }) {
 
 /* ── the interrogation ──────────────────────────────────────────────────── */
 
+/** Plays a synthesised turn, when the engine produced one. */
+function PlayAnswer({ src }: { src: string | null }) {
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  if (!src) return null;
+
+  const url = src.startsWith('http') ? src : `/api/audio/${src.split('/').pop()}`;
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn--ghost btn--sm"
+        style={{ marginTop: '0.9rem' }}
+        onClick={() => {
+          const el = audio.current;
+          if (!el) return;
+          if (playing) {
+            el.pause();
+            setPlaying(false);
+          } else {
+            void el.play();
+            setPlaying(true);
+          }
+        }}
+      >
+        {playing ? 'Pause' : 'Hear it'}
+      </button>
+      <audio ref={audio} src={url} onEnded={() => setPlaying(false)} preload="none" />
+    </>
+  );
+}
+
 export function Interrogation({ state }: { state: CascadeState }) {
   const { pre, post } = state.interrogation;
   if (!pre) return null;
@@ -217,6 +250,7 @@ export function Interrogation({ state }: { state: CascadeState }) {
             cites {pre.source} · {pre.date}
           </p>
         )}
+        <PlayAnswer src={pre.audio} />
       </div>
 
       {post ? (
@@ -226,6 +260,7 @@ export function Interrogation({ state }: { state: CascadeState }) {
             {post.question}
           </p>
           <p style={{ marginTop: '0.5rem', color: 'var(--ink)' }}>{post.answer}</p>
+          <PlayAnswer src={post.audio} />
         </div>
       ) : (
         <div className="panel" style={{ borderLeft: '2px solid var(--line-hi)' }}>

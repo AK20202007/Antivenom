@@ -166,12 +166,22 @@ def chat(
     if settings().use_langchain:
         return _chat_via_langchain(system, user, tools=tools, model=chosen, temperature=temperature)
 
-    response = _client().chat.completions.create(
-        model=chosen,
-        temperature=temperature,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        tools=tools,
-    )
+    # Omit `tools` entirely rather than sending None. Both providers are
+    # OpenAI-compatible, but Fireworks rejects a null tools field with a 400
+    # where OpenRouter quietly ignores it, and the interrogation path calls
+    # this with no tools at all.
+    payload: dict[str, Any] = {
+        "model": chosen,
+        "temperature": temperature,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+    if tools:
+        payload["tools"] = tools
+
+    response = _client().chat.completions.create(**payload)
     message = response.choices[0].message
     calls = getattr(message, "tool_calls", None)
     if calls:

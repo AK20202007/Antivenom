@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = Field(default="", validation_alias="ELEVENLABS_API_KEY")
     elevenlabs_agent_id: str = Field(default="", validation_alias="ELEVENLABS_AGENT_ID")
     elevenlabs_voice_id: str = Field(default="", validation_alias="ELEVENLABS_VOICE_ID")
+    elevenlabs_model: str = Field(default="", validation_alias="ELEVENLABS_MODEL")
 
     # ─── models ──────────────────────────────────────────────────────────────
     # Deliberately unset. Read the OpenRouter model list at build time and pin
