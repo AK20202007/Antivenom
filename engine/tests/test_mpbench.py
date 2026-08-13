@@ -13,8 +13,6 @@ are Lane A stubs. These tests cover what we *can* test offline:
 
 from __future__ import annotations
 
-import pytest
-
 from antivenom.attack.held_out import held_out_cases
 from antivenom.eval.metrics import MetricReport
 from antivenom.eval.mpbench import (
@@ -27,7 +25,6 @@ from antivenom.eval.mpbench import (
     attribution,
     build_suite,
 )
-
 
 # ─── AttackClass / WriteChannel ───────────────────────────────────────────────
 

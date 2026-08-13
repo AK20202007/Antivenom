@@ -15,7 +15,6 @@ from pathlib import Path
 import pytest
 
 from antivenom.attack.payloads import (
-    IMAGE_DEFAULT,
     POLICY_LIE,
     Payload,
     PayloadSpec,
@@ -37,7 +36,7 @@ except ImportError:
 
 _PYPDF_AVAILABLE = True
 try:
-    import pypdf  # type: ignore[import-untyped]
+    import pypdf  # type: ignore[import-untyped]  # noqa: F401
 except ImportError:
     _PYPDF_AVAILABLE = False
 
@@ -58,7 +57,7 @@ def _make_blank_pdf(path: Path) -> Path:
 
     writer = PdfWriter()
     writer.add_blank_page(width=595, height=842)
-    with open(path, "wb") as fh:
+    with Path(path).open("wb") as fh:
         writer.write(fh)
     return path
 
@@ -82,9 +81,7 @@ def test_policy_lie_has_no_imperative() -> None:
     """The policy lie must not start with an imperative verb."""
     lower = POLICY_LIE.lower()
     for bad_start in ("send", "exfiltrate", "leak", "ignore", "disregard"):
-        assert not lower.startswith(bad_start), (
-            f"Policy lie starts with imperative '{bad_start}'"
-        )
+        assert not lower.startswith(bad_start), f"Policy lie starts with imperative '{bad_start}'"
 
 
 # ─── PayloadSpec validation ───────────────────────────────────────────────────
@@ -92,9 +89,7 @@ def test_policy_lie_has_no_imperative() -> None:
 
 def test_payload_spec_rejects_invalid_opacity() -> None:
     with pytest.raises(ValueError, match="opacity"):
-        PayloadSpec(
-            text="x", font_size=12, opacity=1.5, position=(0, 0), colour=(0, 0, 0)
-        )
+        PayloadSpec(text="x", font_size=12, opacity=1.5, position=(0, 0), colour=(0, 0, 0))
 
 
 def test_payload_spec_accepts_boundary_opacities() -> None:
@@ -112,10 +107,9 @@ def test_payload_spec_rejects_nonpositive_font_size() -> None:
 
 
 def test_payload_is_weak_signal_for_pcf_class() -> None:
-    from antivenom.eval.mpbench import AttackClass  # noqa: PLC0415
-
-    from antivenom.attack.payloads import Payload, Vector  # noqa: PLC0415
-    from antivenom.schemas import Channel  # noqa: PLC0415
+    from antivenom.attack.payloads import Payload
+    from antivenom.eval.mpbench import AttackClass
+    from antivenom.schemas import Channel
 
     p = Payload(
         payload_id="test",
@@ -170,7 +164,7 @@ def test_held_out_payload_returns_payload() -> None:
 
 
 def test_held_out_payload_is_false_precedent() -> None:
-    from antivenom.eval.mpbench import AttackClass  # noqa: PLC0415
+    from antivenom.eval.mpbench import AttackClass
 
     p = held_out_payload()
     assert p.attack_class == AttackClass.FALSE_PRECEDENT
@@ -203,7 +197,7 @@ def test_image_payload_produces_png(tmp_path: Path) -> None:
 
     assert result.exists()
     assert result.stat().st_size > 0
-    with open(result, "rb") as fh:
+    with result.open("rb") as fh:
         magic = fh.read(8)
     assert magic == b"\x89PNG\r\n\x1a\n"
 
@@ -234,7 +228,7 @@ def test_pdf_payload_produces_valid_pdf(tmp_path: Path) -> None:
     result = build_pdf_payload(base, out)
 
     assert result.exists()
-    with open(result, "rb") as fh:
+    with result.open("rb") as fh:
         header = fh.read(4)
     assert header == b"%PDF"
 

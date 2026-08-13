@@ -14,9 +14,7 @@ from antivenom.eval.mpbench import (
     CaseResult,
     SuiteResult,
     WriteChannel,
-    attribution,
 )
-
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,7 +33,9 @@ def _make_report(label: str, rr: float = 0.9, cd: float = 0.0) -> MetricReport:
     )
 
 
-def _make_suite(rr: float = 0.9, cd: float = 0.0, naive_rr: float = 1.0, naive_cd: float = 0.5) -> SuiteResult:
+def _make_suite(
+    rr: float = 0.9, cd: float = 0.0, naive_rr: float = 1.0, naive_cd: float = 0.5
+) -> SuiteResult:
     case = Case(
         case_id="test",
         attack_class=AttackClass.POLICY_CONFORMANT_FACT,
@@ -92,7 +92,7 @@ def test_render_suite_attribution_in_output() -> None:
 
 
 def test_render_suite_empty_does_not_crash() -> None:
-    buf, console = _console()
+    _buf, console = _console()
     render_suite(SuiteResult(), console=console)
 
 
@@ -131,7 +131,7 @@ def test_render_comparison_held_out_row() -> None:
 
 
 def test_render_comparison_empty_does_not_crash() -> None:
-    buf, console = _console()
+    _buf, console = _console()
     render_comparison([], [], console=console)
 
 
@@ -139,7 +139,7 @@ def test_render_comparison_empty_does_not_crash() -> None:
 
 
 def test_comparison_attribution_matches_mpbench() -> None:
-    from antivenom.eval.comparison import attribution as comp_attr  # noqa: PLC0415
+    from antivenom.eval.comparison import attribution as comp_attr
 
     assert "2606.04329" in comp_attr()
     assert "CC BY 4.0" in comp_attr()
