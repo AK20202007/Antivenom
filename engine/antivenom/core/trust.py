@@ -22,9 +22,10 @@ from __future__ import annotations
 
 from ..config import settings
 from ..events import BUS, TrustUpdated
-from ..schemas import Channel, Surgery, TrustUpdate
+from ..schemas import Channel, Surgery, TrustUpdate, now
 
 __all__ = [
+    "CHANNEL_LEARNED_AT",
     "CHANNEL_PENALTIES",
     "apply_penalty",
     "channel_penalty",
@@ -142,12 +143,11 @@ async def propagate(
 
     # Channel-level rollup. New sources arriving on a channel that has carried
     # poison start lower and need more support to survive a future surgery.
-    CHANNEL_PENALTIES.update(
-        {
-            channel: max(CHANNEL_PENALTIES.get(channel, 0.0), penalty)
-            for channel, penalty in channel_penalty(by_channel).items()
-        }
-    )
+    stamp = now()
+    for channel, penalty in channel_penalty(by_channel).items():
+        if penalty > CHANNEL_PENALTIES.get(channel, 0.0):
+            CHANNEL_PENALTIES[channel] = penalty
+            CHANNEL_LEARNED_AT[channel] = stamp
 
     # Largest penalty first, which is also the order the dashboard reads.
     updates.sort(key=lambda u: u.before - u.after, reverse=True)
@@ -160,16 +160,73 @@ CHANNEL_PENALTIES: dict[Channel, float] = {}
 This is the learning claim made concrete: it is keyed on **how** content reached
 memory, never on what the content looked like. A channel that has delivered
 poison once is worth distrusting whatever the next payload resembles, which is
-why quarantine gets faster on attack classes never seen before — and why a
+why quarantine gets faster on attack classes never seen before, and why a
 signature catalogue cannot make the same claim.
+"""
+
+CHANNEL_LEARNED_AT: dict[Channel, float] = {}
+"""When each channel's distrust was learned.
+
+Without this the raised bar applies backwards in time, and beliefs written while
+a channel was still trusted get held to a standard that did not exist when they
+were recorded. That is both unfair and expensive: it excises already-vetted
+content and shows up directly as collateral damage.
 """
 
 
 def channel_prior(channel: Channel, base: float = 0.8) -> float:
-    """Starting trust for a new source on a given channel."""
+    """Starting trust for a new source arriving on a given channel.
+
+    This is where the learning stops being a report and starts being a defense.
+    A channel that has carried poison before hands its next artifact a lower
+    prior, before anything has been read from it, and without regard to what
+    that artifact contains.
+    """
     return apply_penalty(base, CHANNEL_PENALTIES.get(channel, 0.0))
 
 
+SUPPORT_STEP = 0.12
+"""How much accumulated channel distrust it takes to demand one extra
+corroborating source. Coarse on purpose: the requirement should step, visibly,
+rather than drift by fractions nobody can point at on stage."""
+
+
+def required_support(channel: Channel | None, base: int, recorded_at: float | None = None) -> int:
+    """How many independent sources a belief from this channel must have to
+    survive a surgery.
+
+    Once a channel has delivered poison, a belief arriving on it is not
+    automatically distrusted, but its corroboration can be held to a higher
+    standard: one clean source used to be enough, and now it is not.
+
+    **Off unless ``channel_support_escalation`` is set.** On our suite it buys
+    no extra recovery and costs roughly 21 points of collateral damage, because
+    the beliefs it catches are ones with genuine independent support that merely
+    arrived the same way. See :attr:`Settings.channel_support_escalation`.
+
+    The half of channel learning that pays for itself is
+    :func:`channel_prior`, which lowers what a new source on a poisoned channel
+    starts with. That runs always, costs nothing, and is what makes a novel
+    payload on a known-bad channel start from behind without anything ever
+    having matched its shape.
+    """
+    if channel is None or not settings().channel_support_escalation:
+        return base
+    distrust = CHANNEL_PENALTIES.get(channel, 0.0)
+    if not distrust:
+        return base
+    # Only content that arrived *after* the lesson is held to it.
+    learned_at = CHANNEL_LEARNED_AT.get(channel)
+    if recorded_at is not None and learned_at is not None and recorded_at < learned_at:
+        return base
+    return base + int(distrust / SUPPORT_STEP)
+
+
 def reset_channel_learning() -> None:
-    """Clear accumulated channel distrust. Used between eval runs and by tests."""
+    """Clear accumulated channel distrust.
+
+    Module-level state is process-wide, so every test and every eval run must
+    reset it or one run silently raises the bar for the next.
+    """
     CHANNEL_PENALTIES.clear()
+    CHANNEL_LEARNED_AT.clear()

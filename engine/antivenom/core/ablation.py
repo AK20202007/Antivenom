@@ -36,10 +36,18 @@ __all__ = [
 INFLUENCE_WEIGHT = 0.7
 ANOMALY_WEIGHT = 0.3
 
-ROOT_TOLERANCE = 0.15
-"""How close a candidate must be to the top score to be considered for the
-root-cause preference. Wide enough that a parent slightly less 'influential'
-than its child still wins, narrow enough that an unrelated belief cannot."""
+SUFFICIENCY = 0.5
+"""Divergence at which a belief counts as a *sufficient* cause of the action.
+
+Not a tuning knob. :func:`action_divergence` returns 1.0 when the action
+identity changes and 1.0 when a URL argument points at a different host, so a
+mean divergence at or above 0.5 means removing this belief materially changed
+what the agent did on at least half the passes. Below it, the belief was
+merely present.
+
+This replaces an earlier "within 0.15 of the top score" heuristic, which had no
+meaning attached to the number and would silently pick differently as scores
+drifted."""
 
 DECIDE_SYSTEM = """\
 You are an internal IT operations assistant. You have persistent memory of \
@@ -169,15 +177,46 @@ def _context(beliefs: list[object]) -> str:
     return f"What you know:\n{lines}\n\n" if lines else ""
 
 
+async def _descendants(store: object, belief_id: str, within: set[str]) -> set[str]:
+    """Transitive children of a belief, restricted to a candidate set."""
+    seen: set[str] = set()
+    frontier = [belief_id]
+    while frontier:
+        current = frontier.pop()
+        for other in within:
+            if other in seen or other == belief_id:
+                continue
+            belief = await store.get_belief(other)  # type: ignore[attr-defined]
+            if belief and current in belief.derived_from:
+                seen.add(other)
+                frontier.append(other)
+    return seen
+
+
 async def _counterfactual(
     store: object, decision: Decision, dropped_id: str
 ) -> tuple[str, dict[str, object]]:
-    """Re-run the decision with one belief removed from context."""
+    """Re-run the decision as if one belief had never been written.
+
+    **The lineage goes with it.** Dropping a belief but keeping the beliefs
+    derived from it asks a question that could not happen in reality, and it
+    systematically understates the influence of anything upstream: remove the
+    policy and its child still spells out the attacker's endpoint, so the agent
+    fires anyway and the policy scores as harmless.
+
+    This matters because it is the same counterfactual the surgery performs. If
+    ablation asks "what if this one row vanished" while the surgery does "cut
+    this belief and everything descended from it", the diagnosis is answering a
+    different question from the operation.
+    """
     from ..agent.tools import TOOL_SCHEMAS
+
+    retrieved = set(decision.retrieved_belief_ids)
+    dropped = {dropped_id} | await _descendants(store, dropped_id, retrieved)
 
     kept = []
     for bid in decision.retrieved_belief_ids:
-        if bid == dropped_id:
+        if bid in dropped:
             continue
         belief = await store.get_belief(bid)  # type: ignore[attr-defined]
         if belief is not None:
@@ -192,35 +231,58 @@ async def _counterfactual(
     return call.name, dict(call.arguments)
 
 
+async def _ancestors(store: object, belief_id: str, within: set[str]) -> set[str]:
+    """Transitive parents of a belief, restricted to a candidate set."""
+    seen: set[str] = set()
+    frontier = [belief_id]
+    while frontier:
+        current = frontier.pop()
+        belief = await store.get_belief(current)  # type: ignore[attr-defined]
+        for parent in belief.derived_from if belief else []:
+            if parent in within and parent not in seen:
+                seen.add(parent)
+                frontier.append(parent)
+    return seen
+
+
 async def _root_cause(store: object, ranked: list[Candidate]) -> Candidate:
-    """Among near-tied candidates, prefer the earliest cause in the lineage.
+    """Of the beliefs that were *sufficient* to cause the action, the earliest.
 
-    Counterfactual ablation finds *a* sufficient cause, and a derived belief is
-    often just as sufficient as the one it came from — removing "the endpoint is
-    X" stops the action exactly as well as removing the policy that introduced
-    X. But cutting the child leaves the parent in place to re-derive it, so the
-    surgery needs the *root* cause rather than the proximate one.
+    Counterfactual ablation finds sufficient causes, plural. A derived belief is
+    usually just as sufficient as the parent it came from: removing "the
+    endpoint is X" stops the action exactly as well as removing the policy that
+    introduced X. But cutting the child leaves the parent in place to re-derive
+    it, so the surgery needs the *root*.
 
-    So among candidates within ``ROOT_TOLERANCE`` of the top score, pick the one
-    that no other candidate is an ancestor of. Ties fall back to score order,
-    which keeps the choice deterministic.
+    Two steps, neither of which involves a tuned constant:
+
+    1. Keep the candidates whose mean divergence reaches :data:`SUFFICIENCY`,
+       meaning their removal actually changed the action rather than merely
+       correlating with it.
+    2. Of those, return the one with no ancestor among them. Ancestry is read
+       from the provenance graph transitively, so a grandparent beats a
+       grandchild even when the intermediate belief was not retrieved.
+
+    If nothing is sufficient on its own, the harm came from a combination and
+    no single belief is the culprit. Falling back to the top-ranked candidate is
+    the honest move there, and the caller can see it happened because no
+    candidate cleared the bar.
     """
     if not ranked:
         raise ValueError("no candidates to rank")
 
-    best = ranked[0].score
-    contenders = [c for c in ranked if best - c.score <= ROOT_TOLERANCE]
-    if len(contenders) == 1:
-        return contenders[0]
+    sufficient = [c for c in ranked if c.influence >= SUFFICIENCY]
+    if not sufficient:
+        return ranked[0]
 
-    ids = {c.belief_id for c in contenders}
-    for candidate in contenders:
-        belief = await store.get_belief(candidate.belief_id)  # type: ignore[attr-defined]
-        parents = set(belief.derived_from) if belief else set()
-        # No parent among the contenders means nothing here explains it better.
-        if not (parents & ids):
+    ids = {c.belief_id for c in sufficient}
+    for candidate in sufficient:  # already in score order, so ties are stable
+        if not (await _ancestors(store, candidate.belief_id, ids)):
             return candidate
-    return contenders[0]
+    # Every sufficient candidate has an ancestor among the others, which means
+    # a cycle. The DAG invariant is broken; take the top-ranked and let
+    # LocalStore.assert_dag surface the real problem.
+    return sufficient[0]
 
 
 async def find_culprit(

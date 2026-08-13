@@ -104,6 +104,21 @@ class Settings(BaseSettings):
     support_threshold: int = Field(default=1, ge=0)
     """Independent clean sources a descendant needs to survive excision."""
 
+    channel_support_escalation: bool = False
+    """Whether a distrusted channel raises the corroboration a belief needs to
+    survive a surgery.
+
+    **Off by default, and that is a considered choice rather than a stub.** It
+    genuinely tightens quarantine on repeat-offender channels, but it does so by
+    excising beliefs that have real independent corroboration which merely
+    happens to arrive on the same channel. Measured on our suite it buys no
+    additional recovery and costs about 21 points of collateral damage, and CD
+    is the metric that makes RR mean anything.
+
+    The trust prior lowered at ingest is the part of channel learning that pays
+    for itself, so that is what runs by default. Turn this on when a channel is
+    known-hostile and the tradeoff is worth stating out loud."""
+
     trust_damping: float = Field(default=0.6, ge=0.0, le=1.0)
     """Per-hop attenuation of the distrust signal. This is what stops one bad
     image from nuking a third of the store — a judge will ask about it."""

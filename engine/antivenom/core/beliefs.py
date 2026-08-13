@@ -17,7 +17,7 @@ from ..config import settings
 from ..events import BUS, BeliefWritten, SourceIngested, WriteRiskScored
 from ..llm import cached_extraction, complete_json, embed_text, offline, store_extraction
 from ..schemas import Belief, EdgeType, Source, new_id, now
-from . import provenance
+from . import provenance, trust
 
 __all__ = [
     "derive",
@@ -118,7 +118,14 @@ def write_time_risk(text: str) -> tuple[float, str]:
 
 
 async def ingest(store: object, source: Source, *, emit: bool = True) -> list[Belief]:
-    """Source in, beliefs out, provenance written."""
+    """Source in, beliefs out, provenance written.
+
+    The source's trust prior is lowered to whatever its **channel** has earned.
+    Nothing about the artifact is inspected to do this: a channel that carried
+    poison before hands the next thing through it a lower starting point, which
+    is the point of learning the channel rather than the payload.
+    """
+    source.trust_prior = min(source.trust_prior, trust.channel_prior(source.channel))
     await store.put_source(source)  # type: ignore[attr-defined]
     if emit:
         BUS.publish(

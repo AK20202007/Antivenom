@@ -21,21 +21,22 @@ dependencies = [
   "uvicorn[standard]>=0.32",
   "websockets>=13.1",
   "httpx>=0.28",
-]
-
-[project.optional-dependencies]
-# Split so the demo floor (all flags off) installs with zero network deps.
-mongo = ["pymongo>=4.10", "motor>=3.6"]
-llm = ["openai>=1.57", "pillow>=11.0", "pypdf>=5.1"]
-# Provider-agnostic model handles and a place to hang tracing. Optional on
-# purpose: the raw OpenAI-compatible client is the default path, and the
-# offline demo floor needs neither.
-langchain = [
+  # The model layer is core. Both hosted providers speak the OpenAI wire
+  # format, and LangChain gives provider-agnostic handles plus somewhere to
+  # hang tracing. None of it is imported on the offline path, so the demo
+  # floor still runs with no network.
+  "openai>=1.57",
   "langchain-core>=0.3",
   "langchain-openai>=0.2",
   "langchain-fireworks>=0.2",
   "langchain-mongodb>=0.2",
 ]
+
+[project.optional-dependencies]
+# Split so the demo floor (all flags off) installs with zero network deps.
+mongo = ["pymongo>=4.10", "motor>=3.6"]
+llm = ["pillow>=11.0", "pypdf>=5.1"]
+
 voice = ["elevenlabs>=1.13"]
 dev = [
   "pytest>=8.3",

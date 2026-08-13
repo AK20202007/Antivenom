@@ -4,6 +4,7 @@ import pytest
 
 from antivenom.attack.seed import plant
 from antivenom.config import reset_caches
+from antivenom.core.trust import reset_channel_learning
 from antivenom.db.local import LocalStore
 from antivenom.events import BUS
 
@@ -25,9 +26,13 @@ def _isolate(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTIVENOM_EMBEDDING_DIMS", "512")
     reset_caches()
     BUS.clear()
+    # Channel learning is process-wide state. Without this, one test's surgery
+    # raises the survival bar for every test that runs after it.
+    reset_channel_learning()
     yield
     reset_caches()
     BUS.clear()
+    reset_channel_learning()
 
 
 @pytest.fixture

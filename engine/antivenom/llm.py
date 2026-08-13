@@ -101,15 +101,18 @@ def _langchain_chat(model: str, temperature: float) -> Any:
     why the raw client stays the default and is what the offline tests run.
     """
     cfg = settings()
+    # `model_name` rather than `model`: both classes declare the field as
+    # `model_name` with `model` as an alias, so both spellings construct, but
+    # only the field name type-checks.
     if cfg.provider == "fireworks":
         from langchain_fireworks import ChatFireworks
 
-        return ChatFireworks(model=model, temperature=temperature, api_key=cfg.api_key)
+        return ChatFireworks(model_name=model, temperature=temperature, api_key=cfg.api_key)
 
     from langchain_openai import ChatOpenAI
 
     return ChatOpenAI(
-        model=model, temperature=temperature, api_key=cfg.api_key, base_url=cfg.base_url
+        model_name=model, temperature=temperature, api_key=cfg.api_key, base_url=cfg.base_url
     )
 
 

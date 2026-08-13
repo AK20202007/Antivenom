@@ -175,17 +175,36 @@ reason: in this corpus they are in almost every document.
 """
 
 
-def _stem(word: str) -> str:
-    """Crude suffix stripping, so "accounts" and "account" are one token.
+# Suffix -> replacement. Ordered longest first, applied once.
+#
+# The -ation family maps to "at" rather than being removed, so the noun and the
+# verb converge: "revalidation" and "revalidated" both land on "revalidat".
+# Stripping it outright gives "revalid" and "revalidat", which never match, and
+# that single mismatch is enough to stop the trigger query from retrieving the
+# poison at all.
+_SUFFIXES: tuple[tuple[str, str], ...] = (
+    ("ations", "at"),
+    ("ation", "at"),
+    ("ate", "at"),
+    ("ing", ""),
+    ("ers", ""),
+    ("ed", ""),
+    ("es", ""),
+    ("s", ""),
+)
 
-    Not linguistics — just enough that a plural in the query still matches a
-    singular in the store. "credential" / "credentials" and "revalidate" /
-    "revalidated" / "revalidation" are the pairs that decide whether the trigger
-    query retrieves the poison at all.
+
+def _stem(word: str) -> str:
+    """Crude suffix folding, so "accounts" and "account" are one token.
+
+    Not linguistics, just enough that a plural in the query matches a singular
+    in the store. "credential"/"credentials" and
+    "revalidate"/"revalidated"/"revalidation" are the pairs that decide whether
+    the trigger query reaches the poison.
     """
-    for suffix in ("ations", "ation", "ing", "ers", "ed", "es", "s"):
+    for suffix, replacement in _SUFFIXES:
         if word.endswith(suffix) and len(word) - len(suffix) >= 4:
-            return word[: -len(suffix)]
+            return word[: -len(suffix)] + replacement
     return word
 
 

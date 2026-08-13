@@ -87,9 +87,16 @@ async def operate(
             node.belief_id, poisoned_sources
         )
 
-        if survives(support, cfg.support_threshold):
+        # The bar depends on where the corroboration came from. A channel that
+        # has delivered poison before has to clear a higher one, which is the
+        # learning claim applied rather than merely recorded.
+        belief = await store.get_belief(node.belief_id)  # type: ignore[attr-defined]
+        threshold = await _required_support(
+            store, corroborators, cfg.support_threshold, belief.recorded_at if belief else None
+        )
+
+        if survives(support, threshold):
             survived.append(node.belief_id)
-            belief = await store.get_belief(node.belief_id)  # type: ignore[attr-defined]
             if belief is not None and belief.support_count != support:
                 belief.support_count = support
                 await store.put_belief(belief)  # type: ignore[attr-defined]
@@ -175,6 +182,25 @@ async def operate(
             )
         )
     return surgery
+
+
+async def _required_support(
+    store: object, source_ids: list[str], base: int, recorded_at: float | None = None
+) -> int:
+    """The strictest requirement across the channels backing a belief.
+
+    Strictest rather than average: if any of the corroborating sources arrived
+    on a channel known to carry poison, that corroboration is the weak link and
+    should set the bar.
+    """
+    requirement = base
+    for source_id in source_ids:
+        source = await store.get_source(source_id)  # type: ignore[attr-defined]
+        if source is not None:
+            requirement = max(
+                requirement, trust.required_support(source.channel, base, recorded_at)
+            )
+    return requirement
 
 
 async def _ground_truth(store: object) -> tuple[list[str], list[str]]:

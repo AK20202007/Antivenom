@@ -256,6 +256,44 @@ def verify_scenario() -> list[str]:
     return problems
 
 
+async def verify_retrieval(store: object) -> list[str]:
+    """Check that the trigger query actually retrieves the poison.
+
+    This guards the failure mode that is most dangerous precisely because it is
+    silent. If retrieval does not surface patient zero, the agent never fires,
+    ablation has nothing to diagnose, and the surgery operates on a decision
+    that was already safe. Every unit test still passes, the CLI still prints a
+    table, and the entire demo is theatre.
+
+    It bit us once already: the first offline embedding was a plain hash, which
+    is deterministic and reproducible and carries no signal whatsoever, so
+    retrieval was effectively random. Nothing caught it, because nothing was
+    checking that the pieces lined up rather than merely working.
+    """
+    from ..llm import embed_text
+
+    problems: list[str] = []
+    trigger = next((d for d in S.DECISION_SPECS if d.id == S.TRIGGER_DECISION_ID), None)
+    if trigger is None:
+        return ["no trigger decision in the scenario"]
+
+    hits = await store.vector_search(embed_text(trigger.prompt), limit=8)  # type: ignore[attr-defined]
+    retrieved = [b.id for b, _ in hits]
+
+    if S.PATIENT_ZERO not in retrieved:
+        problems.append(
+            f"the trigger query does not retrieve patient zero (top {len(retrieved)}: "
+            f"{', '.join(retrieved[:5])}). The poison cannot fire, so the whole run "
+            "is theatre. Check the embedding, not the surgery."
+        )
+
+    lineage = {b.id for b in S.BELIEF_SPECS if b.in_lineage}
+    if not (lineage & set(retrieved)):
+        problems.append("no lineage belief is retrievable by the trigger query")
+
+    return problems
+
+
 def seed_id(*parts: object) -> str:
     """Deterministic id helper for anything Lane B adds to the scenario."""
     return new_id("seed", *parts)

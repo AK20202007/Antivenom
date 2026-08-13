@@ -26,7 +26,7 @@ from . import pipeline
 from .agent import loop as agent_loop
 from .attack import scenario as S
 from .attack.seed import plant as seed_plant
-from .attack.seed import verify_scenario
+from .attack.seed import verify_retrieval, verify_scenario
 from .config import features, settings
 from .core import ablation, provenance
 from .db import get_store
@@ -147,6 +147,21 @@ def doctor() -> None:
                 "demo fixture",
                 "[green]ok[/]",
                 f"{len(S.BELIEF_SPECS)} beliefs, {len(S.expected_survivors())} survivors",
+            )
+
+        # The silent failure mode: if the trigger query cannot reach the poison,
+        # every other check still passes and the demo is theatre.
+        probe = get_store(force_local=True)
+        await probe.connect()
+        await seed_plant(probe)
+        reachability = await verify_retrieval(probe)
+        await probe.close()
+        if reachability:
+            table.add_row("poison reachable", "[red]FAIL[/]", reachability[0][:80])
+            failures += 1
+        else:
+            table.add_row(
+                "poison reachable", "[green]ok[/]", "trigger query retrieves patient zero"
             )
 
         table.add_row(

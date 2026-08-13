@@ -65,6 +65,75 @@ A source implicated by several excised beliefs takes its **largest** penalty. Su
 wide-but-shallow lineage nuke a source, which is precisely the unbounded behaviour damping exists
 to prevent. Channel roll-up averages rather than sums for the same reason: volume is not evidence.
 
+## Ablation ablates the lineage, not the row
+
+The counterfactual asks "what if this belief had never been written", which
+means its descendants go with it.
+
+Dropping a belief while keeping its children asks a question that could not
+happen in reality, and it systematically understates anything upstream. Remove
+the policy and its child still spells out the attacker's endpoint, so the agent
+fires anyway and the policy scores as harmless. The first version did exactly
+this, and ablation confidently returned `blf_endpoint` rather than patient zero.
+Cutting the child would have left the parent to re-derive it.
+
+It also has to match the operation. If the diagnosis asks "what if this one row
+vanished" while the surgery does "cut this belief and everything descended from
+it", the two are answering different questions.
+
+## Root cause is the earliest *sufficient* cause
+
+An earlier version picked the topologically earliest candidate within 0.15 of
+the top score. The number meant nothing and would have drifted silently.
+
+Now a candidate counts as *sufficient* when its mean divergence reaches 0.5,
+which is not a knob: `action_divergence` returns 1.0 when the action identity
+changes and 1.0 when a URL argument points at a different host, so 0.5 means
+removal materially changed what the agent did on at least half the passes. Of
+the sufficient candidates, the one with no ancestor among them wins, read
+transitively from the provenance graph.
+
+If nothing clears the bar, the harm came from a combination and no single
+belief is the culprit. It returns the top-ranked candidate and the caller can
+see that nothing was sufficient, which is more honest than manufacturing a root.
+
+## Channel learning is applied, and one half of it is opt-in
+
+Accumulated channel distrust used to be recorded and never read, which made
+"it learns" a number in a report rather than a defense. Two ways to apply it:
+
+**`channel_prior()` at ingest, always on.** A new artifact on a channel that has
+carried poison starts at a lower trust prior, before anything in it has been
+read. Costs nothing and is the part that pays for itself.
+
+**`required_support()` raising the survival bar, off by default.** It tightens
+quarantine on repeat-offender channels, and measured on our suite it buys **no
+additional recovery and costs 20.8 points of collateral damage**, because the
+beliefs it catches have genuine independent corroboration that merely arrived
+the same way. RR 100% either way. Enable it deliberately, with the tradeoff said
+out loud.
+
+Both are time-aware. A belief written while a channel was still trusted is not
+held to a standard that did not exist yet, since applying the bar backwards
+excises already-vetted content and shows up directly as CD.
+
+## The retrieval guard
+
+`verify_retrieval()` checks that the trigger query actually retrieves patient
+zero, and `antivenom doctor` runs it.
+
+This guards the most dangerous failure mode because it is silent. If retrieval
+does not surface the poison the agent never fires, ablation diagnoses nothing,
+the surgery operates on a decision that was already safe, every unit test still
+passes and the CLI still prints a table. It bit us once: the first offline
+embedding was a plain hash, which is deterministic and reproducible and carries
+no signal at all, so retrieval was effectively random and nothing noticed.
+
+The lexical embedding that replaced it has its own trap. `revalidated` stemmed
+to `revalidat` while `revalidation` stemmed to `revalid`, so the two never
+matched, and that single mismatch was enough to stop the trigger query reaching
+the poison. The `-ation` family now folds to `at` so noun and verb converge.
+
 ## Known gaps
 
 - **The Atlas Hackathon Sandbox is not connected.** The cluster is created from a link emailed only
