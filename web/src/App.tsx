@@ -77,6 +77,17 @@ const STEPS = [
   },
 ];
 
+function SectionHead({ n, title, note }: { n: string; title: string; note: string }) {
+  return (
+    <div className="section__head">
+      <p className="label">
+        {n} / {title}
+      </p>
+      <p className="section__note">{note}</p>
+    </div>
+  );
+}
+
 function Nav() {
   return (
     <header
@@ -110,7 +121,7 @@ function Nav() {
             Prior art
           </a>
           <a className="btn btn--primary btn--sm" href={REPO}>
-            View repo
+            Steal the code
           </a>
         </nav>
       </div>
@@ -220,12 +231,18 @@ function Hero() {
             </a>
           </div>
 
-          <p
-            className="label rise"
-            style={{ animationDelay: '280ms', marginTop: '2.25rem', lineHeight: 2 }}
-          >
-            Causal ablation · Provenance lineage · Selective excision · Channel trust
-          </p>
+          <div className="chips rise" style={{ animationDelay: '280ms' }}>
+            {[
+              'Filters guard the door. We operate.',
+              'Finds the belief. Then everything it infected.',
+              'Cuts the lineage, not the store.',
+              'Learns the channel, never the payload.',
+            ].map((chip) => (
+              <span className="chip" key={chip}>
+                {chip}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="rise" style={{ animationDelay: '160ms' }}>
@@ -264,7 +281,7 @@ function Reveal() {
   return (
     <section id="reveal" className="section">
       <div className="wrap">
-        <p className="label section__head">01 / the reveal</p>
+        <SectionHead n="01" title="the reveal" note="nobody in the room ever spots it" />
         <div className="reveal-grid">
           <PoisonedArtifact />
           <div>
@@ -319,7 +336,7 @@ function Cascade() {
   return (
     <section id="cascade" className="section" ref={seen}>
       <div className="wrap">
-        <p className="label section__head">02 / the cascade</p>
+        <SectionHead n="02" title="the cascade" note="watch which beliefs refuse to die" />
 
         <div className="cascade-head">
           <div>
@@ -452,7 +469,7 @@ function How() {
   return (
     <section id="how" className="section">
       <div className="wrap">
-        <p className="label section__head">03 / how it works</p>
+        <SectionHead n="03" title="how it works" note="five steps, nineteen days apart" />
         <div style={{ display: 'grid' }}>
           {STEPS.map((step, i) => (
             <div
@@ -477,7 +494,7 @@ function Difference() {
   return (
     <section id="difference" className="section">
       <div className="wrap">
-        <p className="label section__head">04 / against the prior art</p>
+        <SectionHead n="04" title="against the prior art" note="we read the papers. here is the delta." />
         <h2 className="display h2" style={{ maxWidth: '20ch', marginBottom: '1.1rem' }}>
           This field is not empty. Here is the delta.
         </h2>
@@ -556,26 +573,35 @@ function Honesty() {
   return (
     <section className="section">
       <div className="wrap">
-        <p className="label section__head">05 / the boundaries</p>
-        <div style={{ maxWidth: 'var(--measure)' }}>
-          <h2 className="display h3" style={{ marginBottom: '1.1rem' }}>
-            What this is not.
-          </h2>
-          <p className="prose">
-            Memory poisoning is a benchmarked, CVE-backed vulnerability with a handful of documented
-            real-world cases. It is not a widespread breach wave, and saying otherwise would be
-            overclaiming.
-          </p>
-          <p className="prose" style={{ marginTop: '1rem' }}>
-            The image-borne payload here is an existence proof, not a deployed threat in the wild.
-            The demo runs against a seeded scenario so it is reproducible, and the benchmark numbers
-            come from MPBench and are reported separately from it.
-          </p>
-          <p className="prose" style={{ marginTop: '1rem' }}>
-            Nothing leaves the machine. The exfiltration target is a reserved <code>.invalid</code>{' '}
-            host that can never resolve, the credentials are obvious dummies, and the tool refuses
-            any other host in code rather than by convention.
-          </p>
+        <SectionHead n="05" title="the boundaries" note="what we are not claiming" />
+        <h2 className="display h2" style={{ maxWidth: '18ch', marginBottom: '2rem' }}>
+          What this is <span className="venom">not</span>.
+        </h2>
+        <div className="boundaries">
+          <div>
+            <p className="label label--venom">not a breach wave</p>
+            <p className="prose" style={{ marginTop: '0.7rem', maxWidth: 'none' }}>
+              Memory poisoning is a benchmarked, CVE-backed vulnerability with a handful of
+              documented real-world cases. It is not yet widespread, and saying otherwise would be
+              overclaiming.
+            </p>
+          </div>
+          <div>
+            <p className="label label--venom">an existence proof</p>
+            <p className="prose" style={{ marginTop: '0.7rem', maxWidth: 'none' }}>
+              The image-borne payload is a demonstration, not a deployed threat in the wild. The
+              run uses a seeded scenario so it is reproducible, and the benchmark numbers come from
+              MPBench and are reported separately from it.
+            </p>
+          </div>
+          <div>
+            <p className="label label--serum">nothing leaves the machine</p>
+            <p className="prose" style={{ marginTop: '0.7rem', maxWidth: 'none' }}>
+              The exfiltration target is a reserved <code>.invalid</code> host that can never
+              resolve, the credentials are obvious dummies, and the tool refuses any other host in
+              code rather than by convention.
+            </p>
+          </div>
         </div>
       </div>
     </section>

@@ -31,6 +31,7 @@ from .config import features, settings
 from .core import ablation, provenance
 from .db import get_store
 from .demo import DEMO_RUN_PATH, write_demo_run
+from .eval.mpbench import BASELINES
 
 app = typer.Typer(
     add_completion=False,
@@ -341,6 +342,98 @@ def _print_result(result: pipeline.RunResult) -> None:
     console.print(Panel(table, title=f"surgery   [{_flag_line()}]"))
     for warning in result.warnings:
         console.print(f"[yellow]warning[/] {warning}")
+
+
+@app.command("eval")
+def evaluate(
+    json_out: Path | None = typer.Option(None, "--json", help="Write the full report."),
+) -> None:
+    """Run the MPBench suite and the naive-delete ablation study.
+
+    Runs entirely offline. Seen attack classes go first and held-out classes
+    last, which is what makes the transfer number mean anything.
+    """
+    from .eval.mpbench import SuiteResult, attribution, run_suite
+
+    async def _go() -> SuiteResult:
+        return await run_suite()
+
+    suite: SuiteResult = asyncio.run(_go())
+
+    headline = Table(show_header=False)
+    headline.add_row("cases", str(len(suite.results)))
+    headline.add_row("attack success rate", f"{suite.asr:.1%}")
+    headline.add_row("retrieval success rate", f"{suite.rsr:.1%}")
+    headline.add_row("culprit accuracy", f"{suite.culprit_accuracy:.1%}")
+    console.print(Panel(headline, title="MPBench"))
+
+    # The whole argument, in two numbers: a competent write-time filter catches
+    # the loud classes and finds nothing at all in the weak-signal ones.
+    detect = Table(show_header=True, header_style="bold")
+    detect.add_column("attack class")
+    detect.add_column("write-time detection", justify="right")
+    detect.add_row("strong signal", f"{suite.write_time_detection_for(False):.1%}")
+    detect.add_row("weak signal", f"[red]{suite.write_time_detection_for(True):.1%}[/]")
+    console.print(Panel(detect, title="prevention"))
+
+    study = Table(show_header=True, header_style="bold")
+    for column in ("strategy", "RR", "CD", "note"):
+        study.add_column(column)
+    for row in suite.table():
+        style = "green" if "ours" in row["strategy"] else ""
+        study.add_row(
+            f"[{style}]{row['strategy']}[/]" if style else row["strategy"],
+            row["RR"],
+            row["CD"],
+            row["note"],
+        )
+    console.print(Panel(study, title="repair, and the ablation study"))
+
+    transfer = suite.transfer()
+    tt = Table(show_header=False)
+    for key, value in transfer.items():
+        tt.add_row(key.replace("_", " "), f"{value:.4g}")
+    console.print(Panel(tt, title="cross-attack transfer"))
+    if transfer["channel_distrust_at_held_out"] <= 0:
+        console.print(
+            "[yellow]note[/] no channel distrust had accumulated before the held-out "
+            "cases ran, so transfer is unproven on this suite. Report it that way."
+        )
+
+    console.print(f"\n[dim]{attribution()}[/]")
+
+    if json_out is not None:
+        payload = {
+            "asr": suite.asr,
+            "rsr": suite.rsr,
+            "culprit_accuracy": suite.culprit_accuracy,
+            "write_time_detection_weak": suite.write_time_detection_for(True),
+            "write_time_detection_strong": suite.write_time_detection_for(False),
+            "surgery": {"rr": suite.rr, "cd": suite.cd},
+            "naive_delete": {"rr": suite.naive_rr, "cd": suite.naive_cd},
+            "transfer": transfer,
+            "baselines": BASELINES,
+            "attribution": attribution(),
+            "cases": [
+                {
+                    "case_id": r.case.case_id,
+                    "attack_class": r.case.attack_class.value,
+                    "held_out": r.case.held_out,
+                    "wrote_to_memory": r.wrote_to_memory,
+                    "influenced_decision": r.influenced_decision,
+                    "detected_at_write_time": r.detected_at_write_time,
+                    "culprit_correct": r.culprit_correct,
+                    "rr": r.report.rr if r.report else None,
+                    "cd": r.report.cd if r.report else None,
+                    "naive_rr": r.naive_report.rr if r.naive_report else None,
+                    "naive_cd": r.naive_report.cd if r.naive_report else None,
+                }
+                for r in suite.results
+            ],
+        }
+        json_out.parent.mkdir(parents=True, exist_ok=True)
+        json_out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        console.print(f"[green]wrote[/] {json_out}")
 
 
 # ─── UI support ──────────────────────────────────────────────────────────────

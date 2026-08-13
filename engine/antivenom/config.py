@@ -61,7 +61,24 @@ class Settings(BaseSettings):
     # Read without the ANTIVENOM_ prefix; these are conventional names.
     mongodb_uri: str = Field(default="", validation_alias="MONGODB_URI")
     mongodb_db: str = Field(default="antivenom", validation_alias="MONGODB_DB")
+    provider: str = "openrouter"
+    """Which model backend to use: ``openrouter``, ``fireworks``, or ``local``.
+
+    Both hosted providers are OpenAI-compatible, so the call site does not
+    change; only the base URL, the key, and the model id naming do."""
+
     openrouter_api_key: str = Field(default="", validation_alias="OPENROUTER_API_KEY")
+    fireworks_api_key: str = Field(default="", validation_alias="FIREWORKS_API_KEY")
+    fireworks_base_url: str = Field(
+        default="https://api.fireworks.ai/inference/v1", validation_alias="FIREWORKS_BASE_URL"
+    )
+    use_langchain: bool = False
+    """Route model calls through LangChain rather than the raw OpenAI client.
+
+    Same behaviour either way. LangChain buys provider-agnostic model handles
+    and a place to hang tracing, at the cost of a dependency, so it is opt-in
+    and the raw path stays the default that the offline tests exercise."""
+
     openrouter_base_url: str = Field(
         default="https://openrouter.ai/api/v1", validation_alias="OPENROUTER_BASE_URL"
     )
@@ -98,6 +115,16 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8787
 
+    @property
+    def api_key(self) -> str:
+        """The key for the selected provider."""
+        return self.fireworks_api_key if self.provider == "fireworks" else self.openrouter_api_key
+
+    @property
+    def base_url(self) -> str:
+        """The OpenAI-compatible base URL for the selected provider."""
+        return self.fireworks_base_url if self.provider == "fireworks" else self.openrouter_base_url
+
     def service_problems(self) -> list[str]:
         """Flags that are on without the credential they need.
 
@@ -115,9 +142,10 @@ class Settings(BaseSettings):
                 "Hackathon Sandbox cluster, or set ANTIVENOM_FEATURE_MONGO=0 to run on "
                 "the in-memory store."
             )
-        if f.vlm and not self.openrouter_api_key:
+        if f.vlm and not self.api_key:
+            name = "FIREWORKS_API_KEY" if self.provider == "fireworks" else "OPENROUTER_API_KEY"
             problems.append(
-                "FEATURE_VLM is on but OPENROUTER_API_KEY is empty. Set the key, or set "
+                f"FEATURE_VLM is on but {name} is empty. Set the key, or set "
                 "ANTIVENOM_FEATURE_VLM=0 to replay cached extractions."
             )
         if f.voice and not self.elevenlabs_api_key:

@@ -45,6 +45,10 @@
 
   /* ── type ── */
   --sans: 'DM Sans Variable', 'DM Sans', -apple-system, system-ui, sans-serif;
+  /* Wordmark only. Space Grotesk has enough character in the A, N and M to
+     make a nine-letter logotype memorable, where tracked-out body text just
+     reads as tracked-out body text. */
+  --wordmark: 'Space Grotesk', 'DM Sans Variable', system-ui, sans-serif;
   --mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
   /* ── motion ── */

@@ -60,6 +60,12 @@
   border-top: 1px solid var(--line);
 }
 
+.boundaries {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 3rem);
+}
+
 .footer-row {
   display: flex;
   flex-wrap: wrap;
@@ -85,6 +91,17 @@
 
   .step-row > p {
     grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .boundaries {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+
+  .chip {
+    white-space: normal;
   }
 }
 

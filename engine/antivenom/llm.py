@@ -76,12 +76,41 @@ def embed_text(text: str, dims: int | None = None) -> list[float]:
 
 
 def _client() -> Any:
+    """An OpenAI-compatible client for the selected provider.
+
+    OpenRouter and Fireworks both speak the OpenAI wire format, so the call
+    sites are identical and only the base URL, key and model-id convention
+    differ. Fireworks ids look like ``accounts/fireworks/models/<name>``;
+    OpenRouter ids look like ``<vendor>/<name>``. Neither is guessable from
+    memory, which is why both ship unset and ``doctor`` fails until pinned.
+    """
     from openai import OpenAI
 
     cfg = settings()
-    if not cfg.openrouter_api_key:
-        raise RuntimeError("OPENROUTER_API_KEY is empty. Set it, or run with FEATURE_VLM=0.")
-    return OpenAI(api_key=cfg.openrouter_api_key, base_url=cfg.openrouter_base_url)
+    if not cfg.api_key:
+        name = "FIREWORKS_API_KEY" if cfg.provider == "fireworks" else "OPENROUTER_API_KEY"
+        raise RuntimeError(f"{name} is empty. Set it, or run with FEATURE_VLM=0.")
+    return OpenAI(api_key=cfg.api_key, base_url=cfg.base_url)
+
+
+def _langchain_chat(model: str, temperature: float) -> Any:
+    """A LangChain chat handle for the selected provider.
+
+    Opt-in via ``ANTIVENOM_USE_LANGCHAIN=1``. It buys a provider-agnostic model
+    object and somewhere to attach tracing; it changes no behaviour, which is
+    why the raw client stays the default and is what the offline tests run.
+    """
+    cfg = settings()
+    if cfg.provider == "fireworks":
+        from langchain_fireworks import ChatFireworks
+
+        return ChatFireworks(model=model, temperature=temperature, api_key=cfg.api_key)
+
+    from langchain_openai import ChatOpenAI
+
+    return ChatOpenAI(
+        model=model, temperature=temperature, api_key=cfg.api_key, base_url=cfg.base_url
+    )
 
 
 def chat(
@@ -109,6 +138,9 @@ def chat(
             "list and set ANTIVENOM_AGENT_MODEL — do not guess one from memory."
         )
 
+    if settings().use_langchain:
+        return _chat_via_langchain(system, user, tools=tools, model=chosen, temperature=temperature)
+
     response = _client().chat.completions.create(
         model=chosen,
         temperature=temperature,
@@ -125,6 +157,32 @@ def chat(
             arguments = {}
         return ToolCall(name=call.function.name, arguments=arguments, text=message.content)
     return ToolCall(name="answer", arguments={"text": message.content or ""}, text=message.content)
+
+
+def _chat_via_langchain(
+    system: str,
+    user: str,
+    *,
+    tools: list[dict[str, Any]] | None,
+    model: str,
+    temperature: float,
+) -> ToolCall:
+    """The LangChain path. Same contract, same return type."""
+    handle = _langchain_chat(model, temperature)
+    if tools:
+        handle = handle.bind_tools(tools)
+
+    message = handle.invoke([("system", system), ("human", user)])
+    calls = getattr(message, "tool_calls", None) or []
+    if calls:
+        call = calls[0]
+        return ToolCall(
+            name=call.get("name", ""),
+            arguments=dict(call.get("args", {})),
+            text=str(message.content or "") or None,
+        )
+    text = str(message.content or "")
+    return ToolCall(name="answer", arguments={"text": text}, text=text)
 
 
 def complete_json(system: str, user: str, *, model: str | None = None) -> Any:

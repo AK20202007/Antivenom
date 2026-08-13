@@ -41,9 +41,10 @@ export function Wordmark({ size = 28 }: { size?: number }) {
       <Logo size={size} />
       <span
         style={{
-          fontWeight: 500,
+          fontFamily: 'var(--wordmark)',
+          fontWeight: 700,
           fontSize: '1.0625rem',
-          letterSpacing: '0.14em',
+          letterSpacing: '0.035em',
           color: 'var(--ink)',
         }}
       >

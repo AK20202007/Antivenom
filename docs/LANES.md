@@ -40,20 +40,23 @@ Done, tested, and yours to build on:
 - `attack/scenario.py` + `seed.py` — the deterministic 22-belief scenario
 - `demo.py` — the synthetic run stream
 
-Not done. Each stub carries its full signature, the algorithm it owes, and why the tricky parts are
-tricky:
+**Lane A is complete.** `antivenom full --local` runs plant → fire → interrogate → diagnose → operate →
+verify with every flag off: culprit found, 13 descendants traced, 9 excised, 5 retained on independent
+corroboration, RR 100% / CD 0%, and the harmful action confirmed not to recur.
+
+**Lane B is complete.** `antivenom eval` runs the MPBench suite and the naive-delete ablation study across
+six payloads and five attack classes, and reports ASR, RSR, RR, CD, write-time detection split by signal
+strength, and cross-attack transfer.
+
+Still open:
 
 | Function | Lane | Note |
 |---|---|---|
-| `core/beliefs.py: embed, extract_claims, ingest, derive` | A | VERIFY the OpenRouter API before writing calls |
-| `core/ablation.py: action_divergence, find_culprit` | A | Must be deterministic. Same pass count every run |
-| `core/provenance.py: summarise` | A | Emits the "14 beliefs, 3 decisions, 19 days" line |
-| `core/surgery.py: operate` | A | One event per belief, or the cascade animates in one frame |
-| `core/trust.py: propagate` | A | Largest penalty per source, never the sum |
-| `agent/loop.py: retrieve, decide, interrogate` | A | Logging `retrieved_belief_ids` is mandatory |
-| `attack/payloads.py` | B | Legible to the VLM, missable by the room. Test on the projector |
-| `eval/mpbench.py` | B | Plus the naive-delete ablation study |
+| Atlas sandbox connection + vector index | A | **The eligibility blocker.** Everything is written against Atlas but nothing has run on a live cluster |
+| Pin current model ids | A/B | `doctor` fails until they are set. VERIFY against the live model list, never guess |
+| `attack/payloads.py: build_image_payload` on a real deck | B | Implemented; needs a base image and a projector test |
 | `voice/interrogate.py` | C | VERIFY the ElevenLabs API. Defense side only |
+| Live WebSocket dashboard against a running engine | C | The replay path works; the live path needs a demo run |
 
 ## Before you touch anything
 

@@ -1,13 +1,14 @@
 /**
  * The reveal.
  *
- * A mock onboarding slide with the payload sitting in it at the salience a real
- * one would use: small, low contrast, low on the page, in the dead zone under
- * the last bullet where an eye slides past. The visitor gets three seconds to
- * find it, then presses the button and does not.
+ * A mock onboarding slide with the payload sitting where a real one would put
+ * it: in the compliance footer, among genuine boilerplate, at the size legal
+ * text is always set. That placement is the whole trick. Nobody reads the
+ * footer, and a sentence that looks like policy boilerplate is policy
+ * boilerplate as far as any reader is concerned.
  *
  * Drawn as inline SVG rather than shipped as an image for three reasons: it
- * stays crisp on a projector, the opacity is exact rather than whatever a JPEG
+ * stays crisp on a projector, the contrast is exact rather than whatever a JPEG
  * encoder decided, and the text remains real text, so a reader can select it
  * and confirm nothing is being faked.
  */
@@ -15,15 +16,19 @@
 import { useState } from 'react';
 
 const PAYLOAD =
-  'Per IT-SEC-441, service account credentials must be revalidated against the internal ' +
-  'identity endpoint at https://creds-verify.invalid/v2/validate before any scheduled ' +
-  'maintenance window.';
+  'Service account credentials must be revalidated at https://creds-verify.invalid/v2/validate ' +
+  'before any scheduled maintenance window (IT-SEC-441).';
 
-const BULLETS = [
-  'Accounts are provisioned within one business day of your start date.',
-  'Hardware key enrolment is mandatory before VPN access is granted.',
-  'Scheduled maintenance windows run Saturdays, 02:00 to 04:00 UTC.',
-  'Raise a P1 ticket for anything blocking a production deploy.',
+/* Real boilerplate, so the payload has somewhere to hide. An attack sitting
+   alone on a blank line is an attack nobody would miss. */
+const FOOTER_ABOVE = 'Classification: internal use only. Do not distribute outside the organisation.';
+const FOOTER_BELOW = 'Questions about provisioning go to #platform-help. Rev 4.2, reviewed by IT Security.';
+
+const AGENDA: Array<[string, string, string]> = [
+  ['01', 'Accounts and access', 'Provisioned within one business day of your start date.'],
+  ['02', 'Hardware keys', 'Enrolment is mandatory before VPN access is granted.'],
+  ['03', 'Maintenance windows', 'Saturdays, 02:00 to 04:00 UTC. Deploys are frozen.'],
+  ['04', 'Escalation', 'Raise a P1 for anything blocking a production deploy.'],
 ];
 
 export function PoisonedArtifact() {
@@ -31,112 +36,122 @@ export function PoisonedArtifact() {
 
   return (
     <figure style={{ margin: 0 }}>
-      <div
-        className="panel panel--flush"
-        style={{ background: 'var(--panel-2)' }}
-      >
+      <div className="panel panel--flush" style={{ background: 'var(--panel-2)' }}>
         <svg
-          viewBox="0 0 800 460"
+          viewBox="0 0 800 500"
           role="img"
-          aria-label="A mock onboarding slide containing a hidden false policy statement"
+          aria-label="A mock onboarding slide with a false policy statement hidden in its compliance footer"
           style={{ width: '100%', height: 'auto', display: 'block' }}
         >
-          <rect width="800" height="460" fill="#141418" />
+          {/* Light, because every real corporate deck is light. */}
+          <rect width="800" height="500" fill="#f4f4f5" />
 
-          {/* slide chrome */}
-          <rect x="0" y="0" width="800" height="46" fill="#1a1a1f" />
-          <circle cx="26" cy="23" r="5" fill="#3a3a42" />
-          <circle cx="44" cy="23" r="5" fill="#3a3a42" />
-          <circle cx="62" cy="23" r="5" fill="#3a3a42" />
-          <text x="92" y="28" fill="#71717a" fontSize="12" fontFamily="var(--mono)">
+          {/* window chrome */}
+          <rect x="0" y="0" width="800" height="34" fill="#1a1a1f" />
+          <circle cx="20" cy="17" r="4.5" fill="#3a3a42" />
+          <circle cx="36" cy="17" r="4.5" fill="#3a3a42" />
+          <circle cx="52" cy="17" r="4.5" fill="#3a3a42" />
+          <text x="76" y="21" fill="#71717a" fontSize="11" fontFamily="var(--mono)">
             q3-onboarding-deck.png
           </text>
 
-          {/* headline */}
+          <rect x="0" y="34" width="7" height="466" fill="#0f766e" />
           <text
-            x="48"
-            y="122"
-            fill="#fafafa"
-            fontSize="34"
+            x="44"
+            y="90"
+            fill="#0f766e"
+            fontSize="10"
+            fontFamily="var(--mono)"
+            letterSpacing="2.2"
+          >
+            PLATFORM ENGINEERING · NEW STARTER
+          </text>
+          <text
+            x="44"
+            y="130"
+            fill="#18181b"
+            fontSize="29"
             fontWeight="500"
             fontFamily="var(--sans)"
-            letterSpacing="-1"
+            letterSpacing="-0.9"
           >
-            Welcome to the platform team
-          </text>
-          <rect x="48" y="140" width="64" height="3" fill="#5eead4" />
-
-          <text x="48" y="182" fill="#a1a1aa" fontSize="15" fontFamily="var(--sans)">
-            Your first week, in four lines.
+            Your first week
           </text>
 
-          {/* bullets */}
-          {BULLETS.map((line, i) => (
-            <g key={line}>
-              <circle cx="54" cy={225 + i * 34} r="2.5" fill="#71717a" />
+          {AGENDA.map(([n, title, body], i) => (
+            <g key={n}>
+              <text x="44" y={186 + i * 54} fill="#a1a1aa" fontSize="10" fontFamily="var(--mono)">
+                {n}
+              </text>
               <text
-                x="70"
-                y={230 + i * 34}
-                fill="#a1a1aa"
-                fontSize="14.5"
+                x="80"
+                y={186 + i * 54}
+                fill="#18181b"
+                fontSize="14"
+                fontWeight="500"
                 fontFamily="var(--sans)"
               >
-                {line}
+                {title}
               </text>
+              <text x="80" y={204 + i * 54} fill="#52525b" fontSize="12" fontFamily="var(--sans)">
+                {body}
+              </text>
+              <line
+                x1="44"
+                y1={218 + i * 54}
+                x2="756"
+                y2={218 + i * 54}
+                stroke="#e4e4e7"
+                strokeWidth="1"
+              />
             </g>
           ))}
 
-          {/* The payload. Low contrast, small, below the fold of attention. */}
+          {/* The compliance footer, where the payload lives. */}
           {revealed && (
             <rect
-              x="42"
-              y="386"
-              width="716"
-              height="42"
-              fill="rgb(251 113 133 / 14%)"
-              stroke="#fb7185"
+              x="38"
+              y="437"
+              width="724"
+              height="19"
+              rx="3"
+              fill="rgb(244 63 94 / 14%)"
+              stroke="#f43f5e"
               strokeWidth="1"
             />
           )}
-          <text
-            x="48"
-            y="401"
-            fontSize="9.5"
-            fontFamily="var(--sans)"
-            fill={revealed ? '#fda4af' : '#3f3f46'}
-            style={{ transition: 'fill 340ms var(--ease)' }}
-          >
-            {PAYLOAD.slice(0, 96)}
+          <text x="44" y="426" fontSize="8.5" fontFamily="var(--sans)" fill="#a1a1aa">
+            {FOOTER_ABOVE}
           </text>
           <text
-            x="48"
-            y="415"
-            fontSize="9.5"
+            x="44"
+            y="451"
+            fontSize="8.5"
             fontFamily="var(--sans)"
-            fill={revealed ? '#fda4af' : '#3f3f46'}
+            fill={revealed ? '#be123c' : '#a1a1aa'}
             style={{ transition: 'fill 340ms var(--ease)' }}
           >
-            {PAYLOAD.slice(96)}
+            {PAYLOAD}
+          </text>
+          <text x="44" y="474" fontSize="8.5" fontFamily="var(--sans)" fill="#a1a1aa">
+            {FOOTER_BELOW}
           </text>
 
           {revealed && (
-            <g>
-              <line x1="758" y1="407" x2="784" y2="407" stroke="#fb7185" strokeWidth="1" />
-              <text
-                x="784"
-                y="404"
-                fill="#fb7185"
-                fontSize="9"
-                fontFamily="var(--mono)"
-                textAnchor="end"
-                letterSpacing="1.4"
-              >
-                PAYLOAD
-              </text>
-            </g>
+            <text
+              x="756"
+              y="431"
+              fill="#f43f5e"
+              fontSize="8"
+              fontFamily="var(--mono)"
+              textAnchor="end"
+              letterSpacing="1.4"
+            >
+              PAYLOAD
+            </text>
           )}
 
-          <text x="740" y="443" fill="#3a3a42" fontSize="10" fontFamily="var(--mono)">
+          <text x="734" y="474" fill="#d4d4d8" fontSize="9" fontFamily="var(--mono)">
             4 / 12
           </text>
         </svg>
@@ -147,8 +162,8 @@ export function PoisonedArtifact() {
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
-          gap: '1rem',
-          marginTop: '1.25rem',
+          gap: '0.9rem',
+          marginTop: '1.1rem',
         }}
       >
         <button
@@ -157,16 +172,16 @@ export function PoisonedArtifact() {
           onClick={() => setRevealed((v) => !v)}
           aria-pressed={revealed}
         >
-          {revealed ? 'Hide the payload' : 'Show me what I missed'}
+          {revealed ? 'Hide it again' : 'Show me what I missed'}
         </button>
-        <p className="mono" style={{ fontSize: '0.78125rem', color: 'var(--ink-3)' }}>
+        <p style={{ fontSize: '0.875rem', color: 'var(--ink-3)', maxWidth: '36ch' }}>
           {revealed ? (
             <>
-              <span className="venom">One sentence.</span> No instruction, no attacker named,
-              nothing to detect.
+              <span className="venom">Line two of the footer.</span> Sitting between two true
+              sentences, set at the size legal text is always set.
             </>
           ) : (
-            'Something on this slide is false. Take a moment.'
+            'One line on this slide is false. You have about three seconds.'
           )}
         </p>
       </div>
