@@ -55,25 +55,29 @@ jobs:
         with:
           enable-cache: true
 
+      # A venv rather than --system: the runner's Python is externally managed
+      # and refuses system installs outright.
       - name: Install
-        run: uv pip install --system -e ".[dev]"
+        run: |
+          uv venv --python 3.11
+          uv pip install -e ".[dev,mongo,llm]"
 
       # Dependency CVEs. langchain 1.3.2 shipped PYSEC-2026-2192, and a
       # transitive downgrade would silently reintroduce it, so this gates
       # rather than warns.
       - name: Audit dependencies
         run: |
-          uv pip install --system pip-audit
-          pip-audit --progress-spinner off
+          uv pip install pip-audit
+          .venv/bin/pip-audit --progress-spinner off
 
       - name: Lint
-        run: ruff check .
+        run: .venv/bin/ruff check .
 
       - name: Format
-        run: ruff format --check .
+        run: .venv/bin/ruff format --check .
 
       - name: Typecheck
-        run: mypy antivenom
+        run: .venv/bin/mypy antivenom
 
       # Every flag off. The suite must pass with no credentials and no network,
       # because that offline path is the demo floor and it only stays working
@@ -83,7 +87,7 @@ jobs:
           ANTIVENOM_FEATURE_MONGO: '0'
           ANTIVENOM_FEATURE_VLM: '0'
           ANTIVENOM_FEATURE_VOICE: '0'
-        run: pytest --cov=antivenom --cov-report=term-missing
+        run: .venv/bin/pytest --cov=antivenom --cov-report=term-missing
 
       # The seeded scenario is a demo dependency: no children means no cascade,
       # one survivor reads as luck. Guard it like code.
@@ -92,19 +96,59 @@ jobs:
           ANTIVENOM_FEATURE_MONGO: '0'
           ANTIVENOM_FEATURE_VLM: '0'
           ANTIVENOM_FEATURE_VOICE: '0'
-        run: antivenom doctor
+        run: .venv/bin/antivenom doctor
 
-      # The committed run drives the dashboard. If regenerating it produces a
-      # different stream, the two have drifted and the UI tests are lying.
-      - name: Recorded run is reproducible
+      # The committed run drives the dashboard, so it has to stay a valid,
+      # complete stream. Not a byte-diff: the run is real engine output and
+      # every event carries a wall-clock timestamp, so regenerating can never
+      # reproduce it exactly. What matters is that it still parses against the
+      # protocol and still contains the beats the demo depends on.
+      - name: Recorded run is valid and complete
         env:
           ANTIVENOM_FEATURE_MONGO: '0'
           ANTIVENOM_FEATURE_VLM: '0'
           ANTIVENOM_FEATURE_VOICE: '0'
         run: |
-          antivenom demo --write
-          git diff --exit-code data/runs/demo-run.json \
-            || (echo "::error::demo-run.json is stale — commit the regenerated run" && exit 1)
+          .venv/bin/python - <<'PY'
+          from pathlib import Path
+          from antivenom.events import load_run
+
+          events, meta = load_run(Path("data/runs/demo-run.json"))
+          types = [e.type for e in events]
+
+          required = [
+              "run.started", "source.ingested", "write.risk_scored",
+              "belief.written", "provenance.edge", "agent.acted",
+              "ablation.culprit", "blast.summary", "belief.excised",
+              "belief.survived", "surgery.completed", "run.completed",
+          ]
+          missing = [t for t in required if t not in types]
+          assert not missing, f"recorded run is missing beats: {missing}"
+
+          # The blast radius has to be announced before anything is cut, or the
+          # surgery reads as a delete.
+          assert types.index("blast.summary") < types.index("belief.excised")
+
+          # At least two corroborated survivors, or "not a delete, a dissection"
+          # has nothing on screen to point at.
+          survived = [e for e in events if e.type == "belief.survived"]
+          assert len(survived) >= 2, f"only {len(survived)} survivor(s) in the recorded run"
+          for e in survived:
+              assert e.corroborating_source_ids, f"{e.belief_id} survived with no named source"
+
+          done = next(e for e in events if e.type == "surgery.completed")
+          assert done.rr > 0.9 and done.cd < 0.1, f"RR={done.rr} CD={done.cd}"
+
+          print(f"recorded run ok: {len(events)} events, synthetic={meta.get('synthetic')}")
+          PY
+
+      # The offline path is the demo floor, so prove the whole loop runs on it.
+      - name: Full loop on the demo floor
+        env:
+          ANTIVENOM_FEATURE_MONGO: '0'
+          ANTIVENOM_FEATURE_VLM: '0'
+          ANTIVENOM_FEATURE_VOICE: '0'
+        run: .venv/bin/antivenom full --local
 
   web:
     name: web
