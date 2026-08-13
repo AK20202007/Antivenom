@@ -14,7 +14,7 @@
 ![Fireworks AI](https://img.shields.io/badge/Fireworks_AI-verified-5eead4.svg)
 ![LangChain](https://img.shields.io/badge/LangChain-core-5eead4.svg)
 ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-defense_only-5eead4.svg)
-![tests](https://img.shields.io/badge/tests-325%20passing-5eead4.svg)
+![tests](https://img.shields.io/badge/tests-328%20passing-5eead4.svg)
 
 </div>
 
@@ -231,7 +231,7 @@ rather than claim the territory was empty, so that is what it is.
   of collateral damage.
 - **Five corroborated beliefs surviving** a cascade, each one able to name the clean source that saved it.
 - Channel-level trust that is **measurably transferring** to attack classes the system has never seen.
-- **325 tests, all offline**, no credentials, no network. The demo floor is the tested path.
+- **328 tests, all offline**, no credentials, no network. The demo floor is the tested path.
 - An agent that **defends a lie and then recants**, where neither answer is scripted. Both come from
   whatever survived retrieval.
 
@@ -289,7 +289,7 @@ uv venv --python 3.11 && uv pip install -e ".[dev]"
 antivenom doctor            # preflight: sandbox, keys, indexes, fixture integrity
 antivenom full --local      # plant → fire → interrogate → diagnose → operate → verify
 antivenom eval              # MPBench suite + the naive-delete ablation study
-pytest                      # 304 engine tests, fully offline
+pytest                      # 307 engine tests, fully offline
 
 cd ../web && npm install && npm run dev
 ```
@@ -340,7 +340,7 @@ Every one of these is load-bearing. Pull any row and something stops working.
 | **FastAPI + WebSockets** | Streams every engine event to the dashboard live, and records runs for offline replay. |
 | **React · TypeScript · Vite** | The cascade. A pure reducer over the event stream, so the whole visual sequence is unit-tested with no browser. |
 | **Cloudflare Pages** | Hosts the site at a clean apex, and means the public demo cannot run up an API bill. |
-| **GitHub Actions** | Gates on lint, types, 325 tests, dependency CVEs, and a history-wide secret scan that has already caught one real leak. |
+| **GitHub Actions** | Gates on lint, types, 328 tests, dependency CVEs, and a history-wide secret scan that has already caught one real leak. |
 
 ## 📎 Attribution
 
