@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# The demo. One command, no assumptions about your shell.
+#
+# Deliberately not `python -m ...`: on a machine where `python` is unset, or
+# the venv has drifted, that fails in front of an audience. This resolves the
+# interpreter itself and repairs the editable install if it has come loose.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="$HERE/engine/.venv/bin/python"
+
+if [[ ! -x "$PY" ]]; then
+  echo "No virtualenv. Run:  cd engine && uv venv --python 3.11 && uv pip install -e '.[dev,mongo,llm]'" >&2
+  exit 1
+fi
+
+# Cheap self-heal: an editable install whose .pth has drifted fails with a
+# bare ModuleNotFoundError, which is a terrible thing to debug on stage.
+if ! "$PY" -c "import antivenom" >/dev/null 2>&1; then
+  echo "repairing the editable install…" >&2
+  (cd "$HERE/engine" && uv pip install -e . -q)
+fi
+
+cd "$HERE/engine"
+export ANTIVENOM_FEATURE_VOICE="${ANTIVENOM_FEATURE_VOICE:-0}"
+exec "$PY" -m antivenom.main "${@:-live}"
