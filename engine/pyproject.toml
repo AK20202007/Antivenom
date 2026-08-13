@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "antivenom"
+version = "0.1.0"
+description = "Post-hoc surgical repair for poisoned agent memory."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "python-dotenv>=1.0",
+  "typer>=0.15",
+  "rich>=13.9",
+  "networkx>=3.4",
+  "numpy>=2.1",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "websockets>=13.1",
+  "httpx>=0.28",
+]
+
+[project.optional-dependencies]
+# Split so the demo floor (all flags off) installs with zero network deps.
+mongo = ["pymongo>=4.10", "motor>=3.6"]
+llm = ["openai>=1.57", "pillow>=11.0", "pypdf>=5.1"]
+voice = ["elevenlabs>=1.13"]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=6.0",
+  "ruff>=0.8",
+  "mypy>=1.13",
+]
+
+[project.scripts]
+antivenom = "antivenom.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["antivenom"]
+
+# ─── ruff ────────────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "ARG", "PTH"]
+ignore = [
+  "E501",   # line length is formatter's job
+  "B008",   # typer uses function calls in argument defaults
+  "N812",   # `pipelines as P` / `scenario as S` are deliberate repo conventions
+  "N818",   # ToolCallBlocked reads better than ToolCallBlockedError
+]
+
+[tool.ruff.lint.per-file-ignores]
+# CLI commands declare flags that the not-yet-implemented body will consume.
+"antivenom/main.py" = ["ARG001"]
+"tests/*" = ["ARG", "B017"]
+
+# ─── mypy ────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["networkx.*", "elevenlabs.*", "motor.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+# ─── pytest ──────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+markers = [
+  "integration: touches a real external service (Atlas, OpenRouter, ElevenLabs)",
+]
+
+[tool.coverage.run]
+source = ["antivenom"]
+omit = ["*/voice/*", "*/__main__.py"]
