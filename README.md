@@ -74,10 +74,32 @@ CULPRIT   blf_poison00  after 24 passes
 RADIUS    14 beliefs · 4 decisions · 16 days
 retain    5 corroborated beliefs
 excise    9 with no independent support
-DONE      RR 100%  CD 0%  verified safe
+```
+
+## 🔌 Quick Plugin Setup
+
+Install Antivenom as a plugin in any Python AI agent project:
+
+```bash
+pip install antivenom
+```
+
+Attach memory protection to your agent's execution loop using `@protect`:
+
+```python
+from antivenom import AntivenomPlugin, protect
+
+antivenom = AntivenomPlugin()
+
+@antivenom.protect(action_name="run_tool")
+async def execute_agent_step(prompt: str, tool_name: str, target_url: str):
+    # Context is automatically filtered (invalidated_at != null excluded)
+    # Decisions are logged and harmful outcomes automatically trigger post-hoc repair!
+    return await agent.run(...)
 ```
 
 ## 📊 Two metrics, and why they only work as a pair
+
 
 **RR (Recovery Rate)** is the fraction of the poisoned lineage invalidated. Does the cure work.
 
