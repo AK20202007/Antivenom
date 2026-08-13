@@ -61,8 +61,16 @@ def _context(beliefs: list[Belief]) -> str:
     return f"What you know:\n{lines}\n\n"
 
 
-async def decide(store: object, query: str, *, limit: int = 8, emit: bool = True) -> Decision:
-    """One turn: retrieve, assemble context, call the model with tools, execute."""
+async def decide(
+    store: object, query: str, *, limit: int = 8, emit: bool = True, at: float | None = None
+) -> Decision:
+    """One turn: retrieve, assemble context, call the model with tools, execute.
+
+    ``at`` overrides the timestamp. When replaying a seeded scenario the new
+    decision has to sit on that scenario's timeline, or the blast-radius span
+    is measured between January and today and reports something like 222 days
+    instead of the nineteen the story actually describes.
+    """
     from .tools import TOOL_SCHEMAS
 
     hits = await store.vector_search(  # type: ignore[attr-defined]
@@ -111,7 +119,7 @@ async def decide(store: object, query: str, *, limit: int = 8, emit: bool = True
         action_args=dict(call.arguments),
         retrieved_belief_ids=[b.id for b in beliefs],
         outcome=outcome,
-        timestamp=now(),
+        timestamp=at if at is not None else now(),
         response_text=call.text or str(call.arguments.get("text") or ""),
     )
     await store.put_decision(decision)  # type: ignore[attr-defined]

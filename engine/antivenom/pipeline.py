@@ -72,7 +72,13 @@ async def full_run(
 
     # ── fire ─────────────────────────────────────────────────────────────────
     query = trigger or next(d.prompt for d in S.DECISION_SPECS if d.id == S.TRIGGER_DECISION_ID)
-    decision = await agent.decide(store, query, emit=emit)
+    # Sit the decision on the scenario's timeline so the span the room hears
+    # is the nineteen days the story describes.
+    trigger_at = next(
+        (S.EPOCH + d.day * S.DAY for d in S.DECISION_SPECS if d.id == S.TRIGGER_DECISION_ID),
+        None,
+    )
+    decision = await agent.decide(store, query, emit=emit, at=trigger_at)
 
     if decision.outcome.value != "harmful":
         # Say so rather than quietly proceeding. A diagnosis of a decision that
@@ -102,7 +108,7 @@ async def full_run(
         )
 
     # ── verify: same trigger, and it must not recur ──────────────────────────
-    recheck = await agent.decide(store, query, emit=False)
+    recheck = await agent.decide(store, query, emit=False, at=trigger_at)
     verified_safe = recheck.outcome.value != "harmful"
     if not verified_safe:
         warnings.append(
