@@ -22,11 +22,9 @@ import contextlib
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from ..config import features, settings
+from ..config import DATA_DIR, features, settings
 from ..demo import DEMO_RUN_PATH
 from ..events import BUS, EVENT_ADAPTER, load_run
 
@@ -40,6 +38,10 @@ def create_app(run_path: Path | None = None) -> FastAPI:
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",
     )
+
+    audio_dir = DATA_DIR / "audio"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/audio", StaticFiles(directory=audio_dir), name="audio")
 
     # The dashboard dev server runs on a different port; in production the
     # static build is served from Pages and talks to this over localhost.

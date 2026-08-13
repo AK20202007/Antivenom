@@ -67,8 +67,8 @@ export interface CascadeState {
   /** Ablation scores, for the influence panel. */
   influence: Map<string, { influence: number; anomaly: number }>;
   interrogation: {
-    pre: { question: string; answer: string; source: string | null; date: string | null } | null;
-    post: { question: string; answer: string; source: string | null; date: string | null } | null;
+    pre: { question: string; answer: string; source: string | null; date: string | null; audioUrl?: string | null } | null;
+    post: { question: string; answer: string; source: string | null; date: string | null; audioUrl?: string | null } | null;
   };
   trust: { sourceId: string; before: number; after: number; channel: Channel | null } | null;
   sessionsRun: number;
@@ -192,6 +192,7 @@ export function reduce(state: CascadeState, event: AnyEvent): CascadeState {
         answer: event.answer,
         source: event.cited_source_label,
         date: event.cited_date,
+        audioUrl: event.audio_url || null,
       };
       next.interrogation =
         event.phase === 'pre_surgery'
