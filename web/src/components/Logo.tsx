@@ -18,7 +18,15 @@
 
 import { useId } from 'react';
 
-export function Logo({ size = 30, className }: { size?: number; className?: string }) {
+export function Logo({
+  size = 30,
+  className,
+  decorative = false,
+}: {
+  size?: number;
+  className?: string;
+  decorative?: boolean;
+}) {
   // Gradient ids must be unique per instance or a second copy on the page
   // silently inherits the first one's fill.
   const gid = useId().replace(/:/g, '');
@@ -28,8 +36,9 @@ export function Logo({ size = 30, className }: { size?: number; className?: stri
       width={size}
       height={size}
       viewBox="0 0 32 32"
-      role="img"
-      aria-label="Antivenom"
+      role={decorative ? 'presentation' : 'img'}
+      aria-hidden={decorative ? true : undefined}
+      aria-label={decorative ? undefined : 'Antivenom'}
       className={className}
       style={{ display: 'block', flexShrink: 0, overflow: 'visible' }}
     >
@@ -91,7 +100,8 @@ export function Logo({ size = 30, className }: { size?: number; className?: stri
 export function Wordmark({ size = 30 }: { size?: number }) {
   return (
     <span className="wordmark">
-      <Logo size={size} />
+      {/* Text carries the name; the mark is decorative beside it. */}
+      <Logo size={size} decorative />
       <span className="wordmark__text">
         <span className="wordmark__anti">ANTI</span>
         <span className="wordmark__venom">VENOM</span>

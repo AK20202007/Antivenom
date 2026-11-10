@@ -65,7 +65,11 @@ export function Aftermath({ state, naive }: { state: CascadeState; naive: NaiveB
         <p className="label label--venom">naive delete-downstream</p>
         <p className="aftermath__n venom">{naive.excised.length}</p>
         <p className="aftermath__l">beliefs destroyed</p>
-        <div className="aftermath__dots">
+        <div
+          className="aftermath__dots"
+          aria-hidden="true"
+          title={`${naive.excised.length} beliefs destroyed`}
+        >
           {naive.excised.map((id) => (
             <span key={id} className="dot dot--dead" />
           ))}
@@ -77,7 +81,11 @@ export function Aftermath({ state, naive }: { state: CascadeState; naive: NaiveB
         <p className="label label--serum">antivenom</p>
         <p className="aftermath__n serum">{survived}</p>
         <p className="aftermath__l">beliefs kept alive</p>
-        <div className="aftermath__dots">
+        <div
+          className="aftermath__dots"
+          aria-hidden="true"
+          title={`${excised} excised, ${survived} survived`}
+        >
           {Array.from({ length: excised }, (_, i) => (
             <span key={`x${i}`} className="dot dot--dead" />
           ))}

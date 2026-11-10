@@ -98,7 +98,10 @@ export function EventFeed({ events, height = 200 }: { events: AnyEvent[]; height
       ref={box}
       className="feed"
       style={{ height, overflowY: 'auto', overflowX: 'hidden' }}
+      tabIndex={0}
+      role="log"
       aria-live="polite"
+      aria-relevant="additions"
       aria-label="Engine telemetry"
     >
       {recent.length === 0 && <p className="dim">awaiting events…</p>}
@@ -156,19 +159,29 @@ export function MetricStrip({ state }: { state: CascadeState }) {
 export function PhaseBar({ state }: { state: CascadeState }) {
   // Just the status line now. The exfiltration banner moved into the act rail,
   // which owns everything that belongs to a particular beat.
+  const resolved = state.phase === 'resolved';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+    <div
+      style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       <span
+        aria-hidden="true"
         style={{
           width: 7,
           height: 7,
-          background: state.phase === 'resolved' ? 'var(--serum)' : 'var(--venom)',
+          background: resolved ? 'var(--serum)' : 'var(--venom)',
           borderRadius: '50%',
           display: 'inline-block',
         }}
-        className={state.phase === 'resolved' ? 'pulse-serum' : 'pulse-venom'}
+        className={resolved ? 'pulse-serum' : 'pulse-venom'}
       />
-      <span className="label">{PHASE_COPY[state.phase]}</span>
+      <span className="label">
+        {PHASE_COPY[state.phase]}
+        <span className="sr-only">{resolved ? ' · resolved' : ' · in progress'}</span>
+      </span>
     </div>
   );
 }
@@ -240,14 +253,21 @@ export function StageTracker({ state }: { state: CascadeState }) {
   const index = STAGES.findIndex((s) => s.key === current);
 
   return (
-    <ol className="stages">
+    <ol className="stages" aria-label="Cascade stages">
       {STAGES.map((stage, i) => {
         const status = i < index ? 'done' : i === index ? 'now' : 'todo';
         return (
-          <li key={stage.key} className={`stage stage--${status}`}>
+          <li
+            key={stage.key}
+            className={`stage stage--${status}`}
+            aria-current={status === 'now' ? 'step' : undefined}
+          >
             <span className="stage__n">{String(i + 1).padStart(2, '0')}</span>
             <span className="stage__label">{stage.label}</span>
             <span className="stage__hint">{stage.hint}</span>
+            <span className="sr-only">
+              {status === 'done' ? ', completed' : status === 'now' ? ', current stage' : ', upcoming'}
+            </span>
           </li>
         );
       })}
