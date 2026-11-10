@@ -63,12 +63,36 @@ function radiusFor(node: CascadeNode): number {
   return 6.5;
 }
 
-export function CascadeGraph({ state, height = 460 }: { state: CascadeState; height?: number }) {
+function summarize(state: CascadeState): string {
+  const counts = { poison: 0, inRadius: 0, excised: 0, survived: 0, clean: 0 };
+  for (const node of state.nodes.values()) {
+    counts[node.state] += 1;
+  }
+  const phase = state.phase.replaceAll('_', ' ');
+  return (
+    `Belief provenance graph, phase ${phase}. ` +
+    `${counts.poison} patient zero, ${counts.inRadius} in blast radius, ` +
+    `${counts.excised} excised, ${counts.survived} survived on corroboration, ` +
+    `${counts.clean} untouched. Circles are beliefs; squares are source artifacts.`
+  );
+}
+
+export function CascadeGraph({
+  state,
+  height = 460,
+  reduceMotion = false,
+}: {
+  state: CascadeState;
+  height?: number;
+  reduceMotion?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const graphRef = useRef<{ d3Force: (n: string) => { strength?: (v: number) => void } | undefined }>(
     null,
   );
   const width = useRef(900);
+  const reduceMotionRef = useRef(reduceMotion);
+  reduceMotionRef.current = reduceMotion;
 
   const data = useMemo(() => {
     const nodes: GraphNode[] = [...state.nodes.values()].map((node) => ({ id: node.id, node }));
@@ -102,9 +126,10 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
       const r = radiusFor(node);
       const t = Date.now() / 700;
 
-      // Halo on the two states the room is meant to watch.
+      // Halo on the two states the room is meant to watch. Static when the
+      // user prefers reduced motion so the canvas is not a perpetual pulse.
       if (node.state === 'poison' || node.state === 'survived') {
-        const wave = (Math.sin(t) + 1) / 2;
+        const wave = reduceMotionRef.current ? 0.35 : (Math.sin(t) + 1) / 2;
         ctx.beginPath();
         ctx.arc(x, y, r + 5 + wave * 9, 0, Math.PI * 2);
         ctx.fillStyle =
@@ -141,8 +166,18 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
     [],
   );
 
+  const description = summarize(state);
+
   return (
-    <div ref={ref} style={{ width: '100%', height, position: 'relative' }}>
+    <div
+      ref={ref}
+      style={{ width: '100%', height, position: 'relative' }}
+      role="img"
+      aria-label={description}
+    >
+      <p className="sr-only" aria-live="polite">
+        {description}
+      </p>
       <ForceGraph2D
         /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
         ref={graphRef as any}
@@ -170,11 +205,13 @@ export function CascadeGraph({ state, height = 460 }: { state: CascadeState; hei
           return link.kind === 'derived' ? 'rgba(167, 139, 250, 0.22)' : 'rgba(255,255,255,0.06)';
         }}
         linkWidth={(raw: unknown) => ((raw as GraphLink).infected ? 1.6 : 0.7)}
-        linkDirectionalParticles={(raw: unknown) => ((raw as GraphLink).infected ? 2 : 0)}
+        linkDirectionalParticles={(raw: unknown) =>
+          reduceMotion ? 0 : (raw as GraphLink).infected ? 2 : 0
+        }
         linkDirectionalParticleWidth={2}
         linkDirectionalParticleColor={() => '#fb7185'}
-        cooldownTicks={90}
-        warmupTicks={30}
+        cooldownTicks={reduceMotion ? 0 : 90}
+        warmupTicks={reduceMotion ? 0 : 30}
         enableNodeDrag={false}
         minZoom={0.4}
         maxZoom={5}
