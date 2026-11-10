@@ -26,8 +26,9 @@
   /* ── ink ── */
   --ink: #fafafa;
   --ink-2: #a1a1aa;
-  --ink-3: #71717a;
-  --ink-4: #52525b;
+  /* ink-3/4 sit on --void and --panel-2; kept ≥4.5:1 for WCAG AA body text. */
+  --ink-3: #8b8b96;
+  --ink-4: #85858f;
 
   /* ── signal ── */
   --serum: #5eead4;
