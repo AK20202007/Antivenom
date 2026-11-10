@@ -111,10 +111,10 @@ function Nav() {
           gap: '1rem',
         }}
       >
-        <a href="#top" aria-label="Antivenom home">
+        <a href="#top" aria-label="ANTIVENOM home">
           <Wordmark />
         </a>
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <nav aria-label="Primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <a className="btn btn--ghost btn--sm nav-link" href="#how">
             How it works
           </a>
@@ -180,13 +180,14 @@ function TerminalCard() {
         </span>
       </div>
       <pre
-        className="mono"
+        className="mono scroll-x"
+        tabIndex={0}
+        aria-label="Sample antivenom full --local session output"
         style={{
           margin: 0,
           padding: '1.1rem',
           fontSize: '0.75rem',
           lineHeight: 1.85,
-          overflowX: 'auto',
         }}
       >
         {lines.map(([kind, text], i) => (
@@ -323,12 +324,21 @@ function Cascade() {
   const replay = useReplay(wsUrl ? { wsUrl } : {});
   const seen = useRef<HTMLDivElement>(null);
   const [started, setStarted] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
-  // Start when it scrolls into view. Autoplaying above the fold would mean the
-  // cascade has already finished by the time anyone looks at it.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => setReduceMotion(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  // Start when it scrolls into view, unless the user prefers reduced motion —
+  // then wait for an explicit Play so motion is not sprung on them.
   useEffect(() => {
     const el = seen.current;
-    if (!el || started || !replay.ready) return;
+    if (!el || started || !replay.ready || reduceMotion) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
@@ -341,18 +351,23 @@ function Cascade() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [replay, started]);
+  }, [replay, started, reduceMotion]);
 
   const progress = replay.total ? Math.round((replay.cursor / replay.total) * 100) : 0;
+  const playLabel = replay.playing
+    ? 'Pause'
+    : replay.cursor >= replay.total
+      ? 'Replay'
+      : 'Play';
 
   return (
-    <section id="cascade" className="section" ref={seen}>
+    <section id="cascade" className="section" ref={seen} aria-labelledby="cascade-heading">
       <div className="wrap">
         <SectionHead n="02" title="the cascade" note="watch which beliefs refuse to die" />
 
         <div className="cascade-head">
           <div>
-            <h2 className="display h2" style={{ maxWidth: '15ch' }}>
+            <h2 id="cascade-heading" className="display h2" style={{ maxWidth: '15ch' }}>
               Not a delete. A <span className="serum">dissection</span>.
             </h2>
             <p className="prose" style={{ marginTop: '1rem' }}>
@@ -360,13 +375,18 @@ function Cascade() {
               patient zero, then watch which beliefs hold.
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          <div
+            role="group"
+            aria-label="Cascade playback"
+            style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}
+          >
             <button
               type="button"
               className="btn btn--ghost btn--sm"
               onClick={replay.playing ? replay.pause : replay.play}
+              aria-pressed={replay.playing}
             >
-              {replay.playing ? 'Pause' : replay.cursor >= replay.total ? 'Replay' : 'Play'}
+              {playLabel}
             </button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={replay.restart}>
               Restart
@@ -375,7 +395,7 @@ function Cascade() {
               type="button"
               className="btn btn--ghost btn--sm"
               onClick={() => replay.setSpeed(replay.speed === 1 ? 3 : 1)}
-              aria-label="Toggle playback speed"
+              aria-label={`${replay.speed}× playback speed`}
             >
               {replay.speed}&times;
             </button>
@@ -383,7 +403,7 @@ function Cascade() {
         </div>
 
         {replay.error && (
-          <p className="mono venom" style={{ marginBottom: '1rem' }}>
+          <p className="mono venom" role="alert" style={{ marginBottom: '1rem' }}>
             {replay.error}
           </p>
         )}
@@ -392,8 +412,15 @@ function Cascade() {
 
         <div className="cascade-grid">
           <div className="panel cascade-stage" style={{ padding: '0.9rem', minWidth: 0 }}>
-            <CascadeGraph state={replay.state} height={520} />
-            <div className="cascade-progress">
+            <CascadeGraph state={replay.state} height={520} reduceMotion={reduceMotion} />
+            <div
+              className="cascade-progress"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress}
+              aria-label="Cascade replay progress"
+            >
               <div style={{ width: `${progress}%` }} />
             </div>
             <div className="cascade-foot">
@@ -402,7 +429,7 @@ function Cascade() {
                   ? 'live engine'
                   : 'recorded run · real engine output'}
               </span>
-              <span className="mono dim" style={{ fontSize: '0.6875rem' }}>
+              <span className="mono dim" style={{ fontSize: '0.6875rem' }} aria-live="polite">
                 {replay.cursor}/{replay.total}
               </span>
             </div>
@@ -412,7 +439,7 @@ function Cascade() {
             <PhaseBar state={replay.state} />
             <Act state={replay.state} naive={replay.naive ?? null} />
             <div className="panel" style={{ padding: '0.85rem', minWidth: 0 }}>
-              <p className="label" style={{ marginBottom: '0.5rem' }}>
+              <p className="label" id="telemetry-label" style={{ marginBottom: '0.5rem' }}>
                 telemetry
               </p>
               <EventFeed events={replay.events.slice(0, replay.cursor)} height={110} />
@@ -420,19 +447,21 @@ function Cascade() {
           </div>
         </div>
 
-        <div className="legend">
+        <div className="legend" role="list" aria-label="Belief graph legend">
           {[
-            { c: 'var(--venom)', l: 'patient zero', round: true },
-            { c: '#7f2a3c', l: 'in the blast radius', round: true },
-            { c: '#141418', l: 'excised', round: true },
-            { c: 'var(--serum)', l: 'survived on corroboration', round: true },
-            { c: '#3a3a42', l: 'source artifact', round: false },
+            { c: 'var(--venom)', l: 'patient zero', round: true, shape: 'circle' },
+            { c: '#7f2a3c', l: 'in the blast radius', round: true, shape: 'circle' },
+            { c: '#141418', l: 'excised', round: true, shape: 'circle' },
+            { c: 'var(--serum)', l: 'survived on corroboration', round: true, shape: 'circle' },
+            { c: '#3a3a42', l: 'source artifact', round: false, shape: 'square' },
           ].map((key) => (
             <span
               key={key.l}
+              role="listitem"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
             >
               <span
+                aria-hidden="true"
                 style={{
                   width: 9,
                   height: 9,
@@ -442,7 +471,10 @@ function Cascade() {
                   display: 'inline-block',
                 }}
               />
-              <span className="label">{key.l}</span>
+              <span className="label">
+                {key.l}
+                <span className="sr-only"> ({key.shape})</span>
+              </span>
             </span>
           ))}
         </div>
@@ -490,13 +522,16 @@ function Difference() {
           update aimed at the channel rather than the payload.
         </p>
 
-        <div className="table-scroll">
+        <div className="table-scroll" tabIndex={0} role="region" aria-label="Prior art comparison">
           <table>
+            <caption className="sr-only">
+              Prior art systems, what each does, and where each stops short of surgical repair
+            </caption>
             <thead>
               <tr>
-                <th>System</th>
-                <th>What it does</th>
-                <th>Where it stops</th>
+                <th scope="col">System</th>
+                <th scope="col">What it does</th>
+                <th scope="col">Where it stops</th>
               </tr>
             </thead>
             <tbody>
@@ -613,29 +648,56 @@ if decision.outcome == Outcome.HARMFUL:
         </p>
 
         <div className="panel" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <div
+            role="tablist"
+            aria-label="Integration steps"
+            style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}
+          >
             {snippets.map((s, idx) => (
               <button
                 key={s.title}
                 type="button"
+                role="tab"
+                id={`integrate-tab-${idx}`}
+                aria-selected={activeStep === idx}
+                aria-controls={`integrate-panel-${idx}`}
+                tabIndex={activeStep === idx ? 0 : -1}
                 className={`btn btn--sm ${activeStep === idx ? 'btn--primary' : 'btn--ghost'}`}
                 onClick={() => setActiveStep(idx)}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const next =
+                      e.key === 'ArrowRight'
+                        ? (idx + 1) % snippets.length
+                        : (idx - 1 + snippets.length) % snippets.length;
+                    setActiveStep(next);
+                    requestAnimationFrame(() => {
+                      document.getElementById(`integrate-tab-${next}`)?.focus();
+                    });
+                  }
+                }}
               >
                 {s.title}
               </button>
             ))}
           </div>
 
-          <div style={{ position: 'relative' }}>
+          <div
+            role="tabpanel"
+            id={`integrate-panel-${activeStep}`}
+            aria-labelledby={`integrate-tab-${activeStep}`}
+            style={{ position: 'relative' }}
+          >
             <pre
-              className="mono"
+              className="mono scroll-x"
+              tabIndex={0}
               style={{
                 background: 'var(--void)',
                 border: '1px solid var(--line)',
                 borderRadius: '4px',
                 padding: '1.25rem',
                 fontSize: '0.8125rem',
-                overflowX: 'auto',
                 color: '#3dffc0',
                 lineHeight: 1.6,
               }}
@@ -707,17 +769,21 @@ function Footer() {
             MIT licensed. Evaluation harness adapted from MPBench (arXiv:2606.04329), CC BY 4.0.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '1.4rem', flexWrap: 'wrap' }}>
-          <a className="label" href={REPO}>
+        <nav aria-label="Footer" style={{ display: 'flex', gap: '1.4rem', flexWrap: 'wrap' }}>
+          <a className="label" href={REPO} style={{ padding: '0.35rem 0' }}>
             GitHub
           </a>
-          <a className="label" href={`${REPO}/blob/main/docs/LANES.md`}>
+          <a className="label" href={`${REPO}/blob/main/docs/LANES.md`} style={{ padding: '0.35rem 0' }}>
             Lanes
           </a>
-          <a className="label" href={`${REPO}/blob/main/docs/PRIOR-ART.md`}>
+          <a
+            className="label"
+            href={`${REPO}/blob/main/docs/PRIOR-ART.md`}
+            style={{ padding: '0.35rem 0' }}
+          >
             Citations
           </a>
-        </div>
+        </nav>
       </div>
     </footer>
   );
@@ -726,8 +792,11 @@ function Footer() {
 export default function App() {
   return (
     <div className="shell">
+      <a className="skip-link" href="#main">
+        Skip to main content
+      </a>
       <Nav />
-      <main>
+      <main id="main">
         <Hero />
         <Reveal />
         <Cascade />
