@@ -2,6 +2,29 @@
    Components and motion.
    ─────────────────────────────────────────────────────────────────────────── */
 
+/* Skip link: first focusable control, off-screen until focused. */
+.skip-link {
+  position: absolute;
+  left: var(--gutter);
+  top: 0.75rem;
+  z-index: 100;
+  padding: 0.55rem 1rem;
+  background: var(--ink);
+  color: var(--void);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transform: translateY(-160%);
+  transition: transform var(--fast) var(--ease);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--serum);
+  outline-offset: 3px;
+}
+
 /* ── typography ─────────────────────────────────────────────────────────── */
 
 /* Large but not shouting. Weight 500 at size does the work that weight 800
@@ -188,6 +211,9 @@
 .btn--sm {
   font-size: 0.8125rem;
   padding: 0.45rem 0.9rem;
+  /* WCAG 2.5.8 Target Size (Minimum): ≥24×24 CSS px */
+  min-height: 24px;
+  min-width: 24px;
 }
 
 /* ── metric tile ────────────────────────────────────────────────────────── */
@@ -225,6 +251,13 @@
   line-height: 1.7;
 }
 
+.feed:focus-visible,
+.table-scroll:focus-visible,
+.scroll-x:focus-visible {
+  outline: 2px solid var(--serum);
+  outline-offset: 2px;
+}
+
 .feed__row {
   display: grid;
   grid-template-columns: 4.5ch 1fr;
@@ -244,6 +277,10 @@
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+}
+
+.scroll-x {
+  overflow-x: auto;
 }
 
 table {
@@ -285,13 +322,12 @@ tbody tr.is-ours td {
 
 /* ── motion ─────────────────────────────────────────────────────────────── */
 
+/* Transform only — opacity fades make live telemetry fail contrast mid-animation. */
 @keyframes feed-in {
   from {
-    opacity: 0;
     transform: translateX(-5px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
